@@ -3,518 +3,65 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>浮沉实验室 · 三年级科学</title>
-<style>
-  :root {
-    --ink: #16324a;
-    --ink-soft: #3d5a75;
-    --paper: #f5f8fb;
-    --card: #ffffff;
-    --accent: #2c5478;
-    --accent-deep: #1a3550;
-    --gold: #d99b3f;
-    --gold-deep: #a86c1f;
-    --float-green: #2f9e6b;
-    --float-green-deep: #1c7a4f;
-    --sink-red: #c85a4a;
-    --sink-red-deep: #9c3f32;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-    background: radial-gradient(circle at 20% 0%, #eef6fb 0%, #dde9f2 45%, #d2e2ee 100%);
-    color: var(--ink);
-    min-height: 100vh;
-    padding: 20px 16px 60px;
-  }
-  .wrap { max-width: 1180px; margin: 0 auto; }
-
-  /* ---------- Header ---------- */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 18px;
-  }
-  .title-block h1 {
-    margin: 0;
-    font-size: 1.7rem;
-    letter-spacing: 0.5px;
-  }
-  .title-block p {
-    margin: 4px 0 0;
-    color: var(--ink-soft);
-    font-size: 0.95rem;
-  }
-  .mode-toggle {
-    display: flex;
-    background: #fff;
-    border-radius: 999px;
-    padding: 5px;
-    box-shadow: 0 4px 14px rgba(30,58,95,0.10);
-  }
-  .mode-btn {
-    border: none;
-    background: transparent;
-    padding: 9px 20px;
-    border-radius: 999px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--ink-soft);
-    cursor: pointer;
-    transition: background .2s, color .2s;
-    white-space: nowrap;
-  }
-  .mode-btn.active {
-    background: var(--accent);
-    color: #fff;
-    box-shadow: 0 4px 10px rgba(44,84,120,0.35);
-  }
-
-  /* ---------- Layout ---------- */
-  .stage {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 20px;
-  }
-  @media (max-width: 900px) {
-    .stage { grid-template-columns: 1fr; }
-  }
-
-  .panel {
-    background: var(--card);
-    border-radius: 28px;
-    box-shadow: 0 10px 34px rgba(30,58,95,0.13);
-    padding: 20px;
-  }
-
-  /* ---------- Tank ---------- */
-  .tank-panel { display: flex; flex-direction: column; gap: 14px; }
-  .tank-stats {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    font-size: 0.85rem;
-  }
-  .stat-chip {
-    background: #f1f6fa;
-    border: 1px solid #e2ecf3;
-    border-radius: 12px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--ink-soft);
-  }
-  .stat-chip b { color: var(--ink); font-size: 1rem; }
-  .stat-chip .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-  .tank-stage {
-    position: relative;
-    height: 420px;
-    border-radius: 22px;
-    overflow: hidden;
-    background: linear-gradient(180deg, #fbfdff 0%, #f2f7fb 38%, #f2f7fb 100%);
-    border: 2px solid #e7eef4;
-  }
-
-  /* glass tank container */
-  .tank {
-    position: absolute;
-    left: 50%;
-    bottom: 18px;
-    transform: translateX(-50%);
-    width: 78%;
-    max-width: 420px;
-    height: 340px;
-    border-radius: 0 0 18px 18px;
-    border: 3px solid rgba(140,170,195,0.55);
-    border-top: none;
-    background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.08) 100%);
-    box-shadow:
-      inset 0 0 30px rgba(255,255,255,0.5),
-      0 18px 34px rgba(30,58,95,0.18);
-    overflow: hidden;
-  }
-  .tank::before {
-    /* glass edge highlight */
-    content: '';
-    position: absolute;
-    top: 0; left: 8px;
-    width: 10px; height: 100%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.1));
-    border-radius: 6px;
-    opacity: 0.6;
-  }
-
-  .water {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 68%;
-    background: linear-gradient(180deg,
-      rgba(120,190,220,0.55) 0%,
-      rgba(60,140,190,0.72) 35%,
-      rgba(30,95,150,0.85) 100%);
-    transition: height .6s cubic-bezier(.34,1.2,.4,1), background 1s ease;
-    box-shadow: inset 0 12px 24px rgba(255,255,255,0.18);
-  }
-  .water.salty {
-    background: linear-gradient(180deg,
-      rgba(150,205,225,0.62) 0%,
-      rgba(90,160,195,0.78) 35%,
-      rgba(55,120,165,0.9) 100%);
-  }
-  .water-surface {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 14px;
-    overflow: visible;
-  }
-  .wave-svg { width: 200%; height: 100%; animation: wave-scroll 3.5s linear infinite; }
-  @keyframes wave-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-
-  .salt-crystals {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image: radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1.4px);
-    background-size: 14px 14px;
-    opacity: 0;
-    transition: opacity .6s ease;
-  }
-  .water.salty .salt-crystals { opacity: 0.35; }
-
-  .ripple {
-    position: absolute;
-    border: 2px solid rgba(255,255,255,0.75);
-    border-radius: 50%;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    animation: ripple-grow 0.9s ease-out forwards;
-  }
-  @keyframes ripple-grow {
-    from { width: 0; height: 0; opacity: 0.9; }
-    to { width: 160px; height: 44px; opacity: 0; }
-  }
-  .droplet {
-    position: absolute;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: rgba(150,205,230,0.9);
-    pointer-events: none;
-    animation: droplet-fly .55s ease-out forwards;
-  }
-  @keyframes droplet-fly {
-    to { transform: translate(var(--dx), var(--dy)); opacity: 0; }
-  }
-
-  .bubble {
-    position: absolute;
-    bottom: 4px;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.55);
-    animation: bubble-rise 2.4s ease-in infinite;
-  }
-  @keyframes bubble-rise {
-    0% { transform: translateY(0) scale(0.6); opacity: 0; }
-    15% { opacity: 0.8; }
-    100% { transform: translateY(-220px) scale(1.1); opacity: 0; }
-  }
-
-  /* floating object in the tank */
-  .specimen {
-    position: absolute;
-    left: 50%;
-    width: 58px;
-    height: 58px;
-    transform: translate(-50%, -140%);
-    transition: top 1s cubic-bezier(.32,.9,.34,1.28), transform .6s ease;
-    filter: drop-shadow(0 6px 8px rgba(0,0,0,0.25));
-  }
-  .specimen.settled-float { animation: bob 2.6s ease-in-out infinite; }
-  .specimen.settled-sink { animation: none; }
-  @keyframes bob { 0%,100% { margin-top: 0; } 50% { margin-top: -6px; } }
-
-  .empty-hint {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--ink-soft);
-    font-size: 0.95rem;
-    text-align: center;
-    padding: 0 30px;
-    opacity: 0.8;
-  }
-
-  /* result banner */
-  .result-banner {
-    display: none;
-    border-radius: 18px;
-    padding: 14px 18px;
-    gap: 14px;
-    align-items: center;
-    font-size: 0.95rem;
-    animation: pop-in .35s ease;
-  }
-  .result-banner.show { display: flex; }
-  @keyframes pop-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .result-banner.float { background: #eafaf1; border: 2px solid #bfe9d3; }
-  .result-banner.sink { background: #fdeeec; border: 2px solid #f3cec8; }
-  .result-icon { font-size: 1.6rem; flex-shrink: 0; }
-  .result-text b { display: block; font-size: 1.05rem; margin-bottom: 2px; }
-  .density-compare {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 6px;
-    font-size: 0.85rem;
-    color: var(--ink-soft);
-  }
-  .compare-bar {
-    position: relative;
-    flex: 1;
-    height: 10px;
-    background: #e7eef4;
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  .compare-bar .fill-liquid {
-    position: absolute; left: 0; top: 0; bottom: 0;
-    background: #7fc4e0;
-    border-radius: 6px;
-  }
-  .compare-bar .marker {
-    position: absolute; top: -3px; width: 3px; height: 16px;
-    background: var(--ink); border-radius: 2px;
-  }
-
-  /* ---------- Shelf ---------- */
-  .shelf-panel { display: flex; flex-direction: column; gap: 14px; }
-  .shelf-title { font-weight: 700; font-size: 1.05rem; }
-  .shelf-sub { font-size: 0.82rem; color: var(--ink-soft); margin-top: -8px; }
-  .shelf-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-  .shelf-item {
-    background: #f7fbfd;
-    border: 2px solid #eef4f8;
-    border-radius: 16px;
-    padding: 10px 6px 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    transition: box-shadow .15s, transform .15s, border-color .15s;
-  }
-  .shelf-item:hover { box-shadow: 0 6px 16px rgba(30,58,95,0.14); transform: translateY(-2px); }
-  .shelf-item.selected { border-color: var(--accent); background: #eaf2f8; box-shadow: 0 0 0 3px rgba(44,84,120,0.15); }
-  .shelf-item.used { opacity: 0.45; }
-  .shelf-icon { width: 42px; height: 42px; }
-  .shelf-name { font-size: 0.78rem; text-align: center; line-height: 1.15; }
-
-  .predict-box {
-    background: #fff8e8;
-    border: 2px solid #f4e2b8;
-    border-radius: 18px;
-    padding: 14px;
-    display: none;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .predict-box.show { display: flex; }
-  .predict-box .q { font-size: 0.92rem; font-weight: 600; }
-  .predict-choices { display: flex; gap: 8px; }
-  .choice-btn {
-    flex: 1;
-    border: none;
-    border-radius: 14px;
-    padding: 10px 0;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #fff;
-    cursor: pointer;
-    box-shadow: 0 5px 0 rgba(0,0,0,0.15);
-  }
-  .choice-btn:active { transform: translateY(4px); box-shadow: none; }
-  .choice-btn.float-choice { background: var(--float-green); }
-  .choice-btn.sink-choice { background: var(--sink-red); }
-  .choice-btn.chosen { outline: 3px solid #16324a55; }
-  .drop-btn {
-    border: none;
-    background: var(--accent);
-    color: #fff;
-    border-radius: 999px;
-    padding: 12px 0;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 6px 0 var(--accent-deep);
-  }
-  .drop-btn:active { transform: translateY(4px); box-shadow: none; }
-  .drop-btn:disabled { background: #b9c6d1; box-shadow: 0 6px 0 #97a5b1; cursor: not-allowed; }
-
-  /* salt control */
-  .salt-box {
-    background: #f1f6fa;
-    border-radius: 18px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .salt-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .salt-btn {
-    border: none;
-    background: var(--gold);
-    color: #fff;
-    border-radius: 12px;
-    padding: 9px 14px;
-    font-size: 0.88rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 5px 0 var(--gold-deep);
-    white-space: nowrap;
-  }
-  .salt-btn:active { transform: translateY(4px); box-shadow: none; }
-  .salt-btn.reset-salt { background: #8a97a3; box-shadow: 0 5px 0 #6b7883; }
-  .salt-meter { flex: 1; height: 10px; background: #e2ecf3; border-radius: 6px; overflow: hidden; }
-  .salt-meter-fill { height: 100%; background: linear-gradient(90deg, #d99b3f, #a86c1f); border-radius: 6px; transition: width .4s ease; width: 0%; }
-
-  .reset-all-btn {
-    border: none;
-    background: #fff;
-    border: 2px solid #e2ecf3;
-    color: var(--ink-soft);
-    border-radius: 999px;
-    padding: 10px 0;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .reset-all-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* ---------- Challenge mode ---------- */
-  .challenge-box {
-    display: none;
-    background: #eef4fb;
-    border: 2px solid #d8e6f2;
-    border-radius: 18px;
-    padding: 14px;
-    font-size: 0.9rem;
-    color: var(--ink-soft);
-    line-height: 1.6;
-  }
-  .challenge-box.show { display: block; }
-  .challenge-box b { color: var(--ink); }
-  .challenge-progress { margin-top: 8px; font-weight: 700; color: var(--accent); }
-
-  footer { text-align: center; margin-top: 26px; color: var(--ink-soft); font-size: 0.8rem; }
-</style>
+<title>浮沉实验室</title>
+<meta name="description" content="三年级科学 DSKP 7.1 · 浮沉与密度互动实验室" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%232F5BEA' d='M9 2v6.3L4.3 18a2 2 0 0 0 1.8 3h11.8a2 2 0 0 0 1.8-3L15 8.3V2' fill='none' stroke='%232F5BEA' stroke-width='1.8'/%3E%3Cpath d='M8 2h8' fill='none' stroke='%232F5BEA' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpath d='M6 15h12v5.5a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1Z' fill='%233C9DC2'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="title-block">
-      <h1>浮沉实验室 · 密度大发现</h1>
-      <p>三年级科学 DSKP 7.1 · 物体的密度与浮沉</p>
+<div id="app">
+
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 2v6.3L4.3 18a2 2 0 0 0 1.8 3h11.8a2 2 0 0 0 1.8-3L15 8.3V2"/>
+          <path d="M8 2h8"/>
+          <path d="M6.4 15h11.2"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <strong>浮沉实验室</strong>
+        <small>三年级科学 · 7.1</small>
+      </span>
     </div>
-    <div class="mode-toggle">
-      <button class="mode-btn active" data-mode="explore">自由探索</button>
-      <button class="mode-btn" data-mode="challenge">救救鸡蛋挑战</button>
+
+    <nav class="topbar-steps" id="topSteps" aria-label="实验站导航"></nav>
+
+    <div class="topbar-controls">
+      <button type="button" id="dataToggle" class="toggle-switch" aria-pressed="false" aria-label="显示数据（密度数值）">
+        <span class="toggle-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V10"/><path d="M12 19V5"/><path d="M20 19v-6"/></svg>
+        </span>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="toggle-label">显示数据</span>
+      </button>
+      <div class="segmented" id="modeSeg" role="group" aria-label="模式切换">
+        <button type="button" class="seg-btn is-active" data-mode="self">自学</button>
+        <button type="button" class="seg-btn" data-mode="teacher">老师</button>
+      </div>
     </div>
   </header>
 
-  <div class="stage">
-    <!-- TANK -->
-    <div class="panel tank-panel">
-      <div class="tank-stats">
-        <div class="stat-chip"><span class="dot" style="background:#5aa7cf"></span>液体密度：<b id="liquidDensityLabel">1.00</b> g/cm³</div>
-        <div class="stat-chip" id="objectDensityChip" style="display:none">物体密度：<b id="objectDensityLabel">-</b> g/cm³</div>
-      </div>
+  <div class="layout">
+    <aside class="panel task-panel" id="taskPanel" aria-label="任务卡"></aside>
 
-      <div class="tank-stage">
-        <div class="tank">
-          <div class="water" id="water">
-            <div class="salt-crystals"></div>
-            <div class="water-surface">
-              <svg class="wave-svg" viewBox="0 0 200 14" preserveAspectRatio="none">
-                <path d="M0 7 Q 12.5 0 25 7 T 50 7 T 75 7 T 100 7 T 125 7 T 150 7 T 175 7 T 200 7 V14 H0 Z" fill="rgba(255,255,255,0.35)"/>
-              </svg>
-            </div>
-            <div class="bubble" style="left:20%; animation-delay:0s"></div>
-            <div class="bubble" style="left:55%; animation-delay:0.9s"></div>
-            <div class="bubble" style="left:78%; animation-delay:1.7s"></div>
-          </div>
-          <div class="empty-hint" id="emptyHint">从右边选一个物体，猜猜看它会浮起来还是沉下去吧！</div>
-        </div>
-      </div>
+    <main class="panel stage-panel">
+      <div class="tank-toolbar" id="tankToolbar"></div>
+      <div class="tank-stage" id="tankStage" aria-label="实验水槽"></div>
+    </main>
 
-      <div class="result-banner" id="resultBanner">
-        <div class="result-icon" id="resultIcon">•</div>
-        <div class="result-text" style="flex:1">
-          <b id="resultTitle"></b>
-          <span id="resultDesc"></span>
-          <div class="density-compare">
-            <span>轻</span>
-            <div class="compare-bar">
-              <div class="fill-liquid" id="compareLiquidFill"></div>
-              <div class="marker" id="compareObjectMarker"></div>
-            </div>
-            <span>重</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="challenge-box" id="challengeBox">
-        <b>挑战任务：</b>新鲜的鸡蛋放进清水里会沉下去（鸡蛋密度比水大）。你能不能只靠加盐，让鸡蛋浮起来？
-        <div class="challenge-progress" id="challengeProgress">已加盐：0 勺</div>
-      </div>
-    </div>
-
-    <!-- SHELF -->
-    <div class="panel shelf-panel">
-      <div>
-        <div class="shelf-title">物体架</div>
-        <div class="shelf-sub">点一下选择，再猜猜看</div>
-      </div>
-      <div class="shelf-grid" id="shelfGrid"></div>
-
-      <div class="predict-box" id="predictBox">
-        <div class="q">你猜「<span id="predictName"></span>」放进水里会怎样？</div>
-        <div class="predict-choices">
-          <button class="choice-btn float-choice" data-guess="float">会浮起来</button>
-          <button class="choice-btn sink-choice" data-guess="sink">会沉下去</button>
-        </div>
-        <button class="drop-btn" id="dropBtn" disabled>丢进水里看看！</button>
-      </div>
-
-      <div class="salt-box">
-        <div class="salt-row">
-          <span>盐分：</span>
-          <div class="salt-meter"><div class="salt-meter-fill" id="saltMeterFill"></div></div>
-        </div>
-        <div class="salt-row">
-          <button class="salt-btn" id="addSaltBtn">+ 加 1 勺盐</button>
-          <button class="salt-btn reset-salt" id="resetSaltBtn">清水（重设）</button>
-        </div>
-      </div>
-
-      <button class="reset-all-btn" id="resetAllBtn">重新开始实验</button>
-    </div>
+    <aside class="panel record-panel" id="recordPanel" aria-label="实验记录"></aside>
   </div>
 
-  <footer>课堂点子铺 · 浮沉实验的核心比较逻辑参考自 PhET Density 模拟的教学设计，界面与程序皆为原创实现</footer>
+  <footer class="app-footer">课堂点子铺 · 浮沉机制概念参考 PhET Density（科罗拉多大学），界面与程序为原创实现 · v2.0</footer>
 </div>
 
-<script src="app.js"></script>
+<script src="js/data.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
