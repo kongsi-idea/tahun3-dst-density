@@ -56,3 +56,7 @@ DSKP 与老师定的验收点。
 - 站②「两个都放入水槽」改为逐个预测、逐个落下（原本两个预测浮层会互相遮挡）。
 - ⚠️ scratchpad 里的 `verify_items.js` 仍用旧尺寸公式算期望值，会误报 item1 失败；实际数值已人工换算核对。
 - 未 push、未部署：等老师本机试用。本机试用方式：在本目录跑 `python3 -m http.server 8765`，打开 http://localhost:8765
+
+## 2026-09-17：已上线
+- 工具正式部署（dpl_BfXVi1a5sGpNwqdBBtMGny6qZDie），Hub 已同步 v2.0 版本记录与 4 张新缩图，并部署、切 alias，线上验证通过。
+- 待改：站④神秘方块排序区的方块图示过小；课本 Unit Ketumpatan 未核对。
