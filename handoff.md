@@ -18,6 +18,6 @@ v2.0 已上线（https://tahun3-dst-density.vercel.app），课堂点子铺已�
 - scratchpad 里旧的 `verify_items.js` 用旧尺寸公式算期望值，会误报，不要再用。
 
 ## 🕐 最后更新
-2026-09-17 00:5x · Claude Opus 5 @ mr007s-Macbook-Air · Git：❌ 未推（深夜 guard：收工指令不含 push）
+2026-09-17 00:5x · Claude Opus 5 @ mr007s-Macbook-Air · Git：✅ 已推
 
 历史：2026-07-21 v1.0 上架 → 2026-09-16 v2.0 重做（Sonnet 实现、三轮视觉修正）→ 2026-09-17 工具与 Hub 上线。
