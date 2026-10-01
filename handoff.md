@@ -1,11 +1,12 @@
 # 浮沉实验室 · 交接
 
 ## ⏯️ 目前做到哪
-v3.0（3D 厨房版）完成：五个环节、两个场景（大水缸＋秤、玻璃量杯），本机 Playwright 全流程验收通过（无报错）。2026-10-02 老师说「直接做到完发布上线」。
+v3.0（3D 厨房版）已上线 https://tahun3-dst-density.vercel.app（工具 commit c7da6d9）。线上用 Playwright 真实点击跑完五个环节，无报错。Hub 已同步：app.js v3.0＋changelog、4 张新缩图（v3-*）、覆盖表、tools-status（Hub 8ead72a、teaching-tools 9824ad9），线上 app.js 已确认是 v3.0。v2 旧缩图搬到 `~/Documents/待删除/kongsi-idea-thumbs-tahun3-v2/`。
 
 ## 🚦 目前状态
-- 上线状态与 Hub 同步结果见本档最后更新与 commit 记录。
-- 学校触控一体机的流畅度**仍未实测**；页面会自动降画质（像素比→1、阴影降级）。
+- 可用。学校触控一体机的流畅度**仍未实测**；页面会自动降画质（像素比→1、阴影降级）。
+- 工具的 `vercel --prod` 没被 guard 挡（已知漏洞），老师当次明确要求上线。
+- 回滚：工具 `git revert c7da6d9` 后重新部署；Hub `git revert 8ead72a` 后重新部署。
 
 ## ➡️ 下一步
 1. 老师在课堂／一体机上实际试用，收集反馈（手机直立时画面偏小，课堂主力是横屏）。
@@ -19,6 +20,6 @@ v3.0（3D 厨房版）完成：五个环节、两个场景（大水缸＋秤、�
 - 本机测试：`python3 -m http.server 8765`，开 http://localhost:8765。
 
 ## 🕐 最后更新
-2026-10-02 · Claude Opus 5.5 · v3.0
+2026-10-02 · Claude Opus 5.5 @ mr007s-Macbook-Air · v3.0 · Git：✅ 已推
 
 历史：2026-07-21 v1.0 → 2026-09-16 v2.0（PhET 风格 2D）→ 2026-10-02 v3.0（3D 厨房、五环节、液体分层）。
