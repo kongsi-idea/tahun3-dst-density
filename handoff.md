@@ -1,23 +1,24 @@
 # 浮沉实验室 · 交接
 
 ## ⏯️ 目前做到哪
-v2.0 已上线（https://tahun3-dst-density.vercel.app），课堂点子铺已同步版本记录（2.0／2026-09-17）和 4 张新缩图，并已部署、切 alias，线上验证通过。
+v3.0（3D 厨房版）完成：五个环节、两个场景（大水缸＋秤、玻璃量杯），本机 Playwright 全流程验收通过（无报错）。2026-10-02 老师说「直接做到完发布上线」。
 
 ## 🚦 目前状态
-- 四个实验站＋学习报告、自学／老师模式都可用。线上 Playwright 检查 26 项全过，没有报错。
-- 等课堂实际使用的反馈。
+- 上线状态与 Hub 同步结果见本档最后更新与 commit 记录。
+- 学校触控一体机的流畅度**仍未实测**；页面会自动降画质（像素比→1、阴影降级）。
 
 ## ➡️ 下一步
-1. 站④神秘方块排序区的方块图示太小（排序格里的立方体图标要放大，空白要收紧）。
-2. 拿到三年级科学课本 Unit Ketumpatan 后核对内容，决定要不要补液体分层或加糖。
-3. 如果改版上线，照 `../agents.md` 的五步更新 Hub。
+1. 老师在课堂／一体机上实际试用，收集反馈（手机直立时画面偏小，课堂主力是横屏）。
+2. 第④环节：葡萄若掉在小番茄上会显示「停在…中间」（物体叠放），可再优化文字判定。
+3. 「我的发现」卡的下载在 claude.ai 预览里会被挡，正式网址可用。
 
 ## ⚠️ 注意事项
-- 物理常数、图片裁切等决定写在 `agents.md`，改之前先读。
-- 本机测试：在本目录跑 `python3 -m http.server 8765`，打开 http://localhost:8765。Playwright 可用 `~/.npm/_npx/e41f203b7505f1fb/node_modules` 的 playwright-core。
-- scratchpad 里旧的 `verify_items.js` 用旧尺寸公式算期望值，会误报，不要再用。
+- 只改 `proto/lab-v3.html`，再生成 `index.html`：
+  `{ printf '<!doctype html>\n<html lang="zh-CN">\n<head>…</head>\n<body>\n'; cat proto/lab-v3.html; printf '\n</body>\n</html>\n'; } > index.html`（head 内容照现有 index.html 前 8 行）。
+- 验收脚本思路：`window.__fc`（enterMod / step / S / snaps）可直接驱动；物理关键结果见 agents.md。
+- 本机测试：`python3 -m http.server 8765`，开 http://localhost:8765。
 
 ## 🕐 最后更新
-2026-09-17 00:5x · Claude Opus 5 @ mr007s-Macbook-Air · Git：✅ 已推
+2026-10-02 · Claude Opus 5.5 · v3.0
 
-历史：2026-07-21 v1.0 上架 → 2026-09-16 v2.0 重做（Sonnet 实现、三轮视觉修正）→ 2026-09-17 工具与 Hub 上线。
+历史：2026-07-21 v1.0 → 2026-09-16 v2.0（PhET 风格 2D）→ 2026-10-02 v3.0（3D 厨房、五环节、液体分层）。

@@ -1,0 +1,1358 @@
+<title>浮沉实验室三种画风</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 布局：全屏 3D 场景为主角，界面只在四角浮起；三种画风各有一套 token（单一视觉世界，不跟随深浅色） */
+:root {
+  color-scheme: light;
+  --ink: #2a241f; --ink-2: #6a5d50; --panel: rgba(255, 251, 244, .86); --line: rgba(60, 40, 20, .14);
+  --accent: #e2a21c; --accent-ink: #2a241f; --float: #1d7a4c; --sink: #b5432b;
+  --font-display: "ZCOOL KuaiLe", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --radius: 14px; --sky: linear-gradient(#f3e6d3, #e9d6bb);
+}
+#app[data-style="lab"] {
+  --ink: #0e1620; --ink-2: #4d5a68; --panel: rgba(255, 255, 255, .8); --line: rgba(14, 22, 32, .12);
+  --accent: #2350e0; --accent-ink: #ffffff; --float: #0f8a5a; --sink: #c4472b;
+  --font-display: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --radius: 8px; --sky: radial-gradient(120% 90% at 50% 20%, #f4f6f8 0%, #dfe4ea 60%, #c9d0d8 100%);
+}
+#app[data-style="outdoor"] {
+  --ink: #10301e; --ink-2: #3f5d4b; --panel: rgba(255, 255, 255, .88); --line: rgba(16, 48, 30, .14);
+  --accent: #1e8a4c; --accent-ink: #ffffff; --float: #1e8a4c; --sink: #c2452a;
+  --font-display: "ZCOOL QingKe HuangYou", "Noto Sans SC", "PingFang SC", sans-serif;
+  --radius: 20px; --sky: linear-gradient(#5fb9f0 0%, #a9dcfa 45%, #e4f4fd 75%);
+}
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; background: #e9d6bb; color: #2a241f; font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; }
+#app { position: fixed; inset: 0; background: var(--sky); color: var(--ink); font-family: var(--font-body); -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#c.grabbing { cursor: grabbing; }
+#labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+.top { position: absolute; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; pointer-events: none; }
+.top > * { pointer-events: auto; }
+.brand { display: flex; align-items: center; gap: 12px; padding: 10px 18px 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.brand svg { width: 36px; height: 36px; color: #c98a10; flex: none; }
+.brand .name { font-family: var(--font-display); font-size: 24px; line-height: 1.1; letter-spacing: .02em; }
+.brand .sub { font-size: 15px; color: var(--ink-2); margin-top: 4px; }
+.brand .sub b { color: var(--ink); font-size: 17px; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.tool { font: 500 16px/1 var(--font-body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); min-height: 56px; padding: 0 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .08s ease-out, opacity .15s; }
+.tool svg { width: 24px; height: 24px; flex: none; }
+.tool.primary { background: var(--accent); color: #2a241f; border-color: transparent; font-weight: 700; }
+.tool[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.tool:active { transform: scale(.96); }
+.tool:disabled { opacity: .45; cursor: default; }
+button:focus-visible { outline: 3px solid #c98a10; outline-offset: 2px; }
+
+.scale-card { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); padding: 10px 18px 12px; border-radius: 16px; background: #1f2a1c; color: #c9f2a8; text-align: center; box-shadow: 0 8px 24px rgba(40, 25, 10, .25); pointer-events: none; min-width: 150px; will-change: transform; }
+.scale-card::after { content: ""; position: absolute; left: 50%; bottom: -9px; margin-left: -9px; border: 9px solid transparent; border-bottom: 0; border-top-color: #1f2a1c; }
+.sc-name { font-size: 15px; color: #e7f7d8; font-weight: 500; }
+.sc-num { font-family: var(--font-mono); font-weight: 600; font-size: 44px; line-height: 1.05; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.sc-num small { font-family: var(--font-body); font-size: 20px; margin-left: 6px; font-weight: 700; }
+.scale-card.empty .sc-num { opacity: .55; }
+
+.hint { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); transform: translateX(-50%); padding: 12px 20px; border-radius: 999px; background: rgba(42, 30, 18, .78); color: #fff; font-size: 17px; white-space: nowrap; pointer-events: none; transition: opacity .4s; }
+.hint.gone { opacity: 0; }
+
+.shelf-wrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 12px); display: flex; justify-content: center; pointer-events: none; }
+.shelf { pointer-events: auto; display: flex; gap: 8px; padding: 10px; max-width: 100%; overflow-x: auto; background: rgba(255, 249, 238, .92); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 10px 30px rgba(60, 35, 10, .16); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); scrollbar-width: none; }
+.item { position: relative; flex: none; width: 104px; padding: 6px 4px 10px; border: 0; border-radius: 16px; background: transparent; cursor: grab; display: flex; flex-direction: column; align-items: center; gap: 4px; font: 500 16px/1.2 var(--font-body); color: var(--ink); touch-action: none; transition: background .15s, transform .08s ease-out; }
+.item:hover { background: rgba(226, 162, 28, .14); }
+.item:active { transform: scale(.96); }
+.item img { width: 76px; height: 76px; object-fit: contain; pointer-events: none; -webkit-user-drag: none; transition: opacity .2s, filter .2s; }
+.item .where { position: absolute; top: 4px; right: 4px; font-size: 12px; font-weight: 700; padding: 3px 7px; border-radius: 999px; color: #fff; display: none; }
+.item.in-water img, .item.on-scale img { opacity: .45; filter: grayscale(.5); }
+.item.in-water .where { display: block; background: #2f8fb5; }
+.item.on-scale .where { display: block; background: #4c6a2f; }
+.item.flash { animation: flash .5s ease-out; }
+@keyframes flash { 0% { background: rgba(226, 162, 28, .45); } 100% { background: transparent; } }
+
+.tag { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 5px; padding: 4px 5px 4px 11px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 16px; font-weight: 700; white-space: nowrap; color: var(--ink); will-change: transform; transition: opacity .2s; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.tag.plain { padding-right: 11px; }
+.tag .st { display: none; align-items: center; gap: 3px; padding: 3px 9px 3px 6px; border-radius: 999px; color: #fff; font-size: 16px; }
+.tag .st svg { width: 15px; height: 15px; }
+.tag.float .st { display: inline-flex; background: var(--float); }
+.tag.sink .st { display: inline-flex; background: var(--sink); }
+.tag.hide { opacity: 0; }
+
+#loading { position: absolute; inset: 0; display: grid; place-items: center; background: var(--sky); font-size: 18px; color: var(--ink-2); transition: opacity .5s; }
+#loading.done { opacity: 0; pointer-events: none; }
+
+@media (max-width: 900px) {
+  .tool span { display: none; }
+  .tool { min-height: 52px; padding: 0 14px; }
+  .brand .name { font-size: 20px; }
+  .item { width: 84px; font-size: 14px; }
+  .item img { width: 60px; height: 60px; }
+  .hint { white-space: normal; width: calc(100% - 48px); text-align: center; font-size: 15px; bottom: calc(env(safe-area-inset-bottom, 0px) + 128px); }
+  .sc-num { font-size: 34px; }
+}
+@media (prefers-reduced-motion: reduce) { .tool, .tag, .hint, .item { transition: none; } .item.flash { animation: none; } }
+</style>
+
+<div id="app" data-style="kitchen">
+  <canvas id="c" aria-label="水槽实验台，可以拖动物体丢进水里"></canvas>
+  <div id="labels"></div>
+
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4h12M12 4v8L5.5 25a2 2 0 0 0 1.8 3h17.4a2 2 0 0 0 1.8-3L20 12V4"/><path d="M8.5 19.5c2.5-1.5 5 1.5 7.5 0s5-1.5 7.5 0" /><circle cx="14" cy="23.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="22" r="1" fill="currentColor" stroke="none"/></svg>
+      <div><div class="name">浮沉实验室</div><div class="sub">水缸里的水：<b id="liquidV">清水</b></div></div>
+    </div>
+    <div class="tools">
+      <button class="tool primary" id="saltBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9c0 3 3 5 7 5s7-2 7-5H3z"/><path d="M17 10.5L21.5 6"/><path d="M8 18v.01M11 20v.01M6 21v.01"/></svg><span>加一匙盐</span></button>
+      <button class="tool primary" id="sugarBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9c0 3 3 5 7 5s7-2 7-5H3z"/><path d="M17 10.5L21.5 6"/><rect x="6" y="17" width="2.4" height="2.4" rx=".4"/><rect x="10" y="19" width="2.4" height="2.4" rx=".4"/></svg><span>加一匙糖</span></button>
+      <button class="tool" id="freshBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg><span>换回清水</span></button>
+      <button class="tool" id="resetBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>全部拿出来</span></button>
+      <button class="tool" id="slowBtn" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4"/></svg><span>慢动作</span></button>
+    </div>
+  </header>
+
+  <div class="scale-card" id="scaleCard" aria-live="polite">
+    <div class="sc-name" id="scName">把东西拖到秤上</div>
+    <div class="sc-num"><span id="scNum">0</span><small>克</small></div>
+  </div>
+
+  <div class="hint" id="hint">点一下物品，它会掉进水里。拖到秤上，可以称重量。</div>
+
+  <footer class="shelf-wrap">
+    <div class="shelf" id="shelf" role="list" aria-label="物品架"></div>
+  </footer>
+
+  <div id="loading">正在准备水槽…</div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ===================================================================
+// 0. 常数（单位：米、千克、秒；密度 kg/m³）
+// ===================================================================
+const G = 9.81;
+const RHO_WATER = 1000;
+const TANK = { cx: -0.12, cz: 0, W: 0.44, D: 0.26, H: 0.30, wall: 0.007, floor: 0.012 };
+TANK.x0 = TANK.cx - TANK.W / 2; TANK.x1 = TANK.cx + TANK.W / 2;
+TANK.z0 = TANK.cz - TANK.D / 2; TANK.z1 = TANK.cz + TANK.D / 2;
+TANK.rim = TANK.floor + TANK.H;
+const BASE_DEPTH = 0.19;
+const BAL = { x: 0.245, z: 0.0, w: 0.17, d: 0.19, h: 0.030, panR: 0.068 };
+BAL.panTop = BAL.h + 0.009;
+const COUNTER = { x0: -0.82, x1: 0.82, z0: -0.40, z1: 0.48 };
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function REDUCED_N() { return REDUCED ? 60 : 140; }
+const GRAINS_PER_SPOON = REDUCED_N(), SALT_STEP = 20, SUGAR_STEP = 12; // 每匙增加的液体密度 kg/m³（糖比盐弱，要放多一点）
+
+// ===================================================================
+// 1. 渲染器
+// ===================================================================
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+let pixelRatio = Math.min(devicePixelRatio || 1, 2);
+renderer.setPixelRatio(pixelRatio);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+const MAX_ANISO = renderer.capabilities.getMaxAnisotropy();
+
+// ===================================================================
+// 2. 小工具：随机、噪声、画布贴图
+// ===================================================================
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+let rnd = mulberry32(11);
+const R = (a, b) => a + (b - a) * rnd();
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+function makeNoise(seed) {
+  const r = mulberry32(seed), N = 256, g = new Float32Array(N * N);
+  for (let i = 0; i < g.length; i++) g[i] = r();
+  return (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = g[((yi & 255) * N) + (xi & 255)], b = g[((yi & 255) * N) + ((xi + 1) & 255)];
+    const c = g[(((yi + 1) & 255) * N) + (xi & 255)], d = g[(((yi + 1) & 255) * N) + ((xi + 1) & 255)];
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+}
+const noiseA = makeNoise(3), noiseB = makeNoise(9);
+function fbm(n, x, y, oct = 4) { let s = 0, a = 0.5, f = 1; for (let i = 0; i < oct; i++) { s += a * n(x * f, y * f); f *= 2; a *= 0.5; } return s / (1 - Math.pow(0.5, oct)); }
+const hex = (c) => new THREE.Color(c);
+function texFromCanvas(c, { srgb = true, repeat = [1, 1] } = {}) {
+  const t = new THREE.CanvasTexture(c);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); t.anisotropy = MAX_ANISO;
+  return t;
+}
+function canvas2d(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); return c; }
+function pixelCanvas(w, h, fn) {
+  return canvas2d(w, h, (g) => {
+    const img = g.createImageData(w, h), d = img.data;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = fn(x, y), i = (y * w + x) * 4; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = c[3] ?? 255; }
+    g.putImageData(img, 0, 0);
+  });
+}
+const mix3 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const rgb = (h) => { const c = hex(h); return [c.r * 255, c.g * 255, c.b * 255]; };
+
+// 木纹：长条纹理（沿 u 方向的年轮线）
+function woodCanvas(light, dark, w = 512, h = 256, seed = 1, stretch = 1) {
+  const L = rgb(light), D = rgb(dark), n = makeNoise(seed);
+  return pixelCanvas(w, h, (x, y) => {
+    const warp = fbm(n, x * 0.006 / stretch, y * 0.03, 4) * 26;
+    const ring = (y + warp) / 7.5;
+    const s = Math.pow(Math.abs(Math.sin(ring * Math.PI)), 6);
+    const fine = fbm(n, x * 0.08 / stretch, y * 0.5, 2);
+    const t = clamp(s * 0.65 + fine * 0.25 + fbm(n, x * 0.002, y * 0.01, 2) * 0.25, 0, 1);
+    return mix3(L, D, t);
+  });
+}
+
+// ===================================================================
+// 3. 水底光纹（caustics）：注入到台面材质，按太阳方向投影
+// ===================================================================
+const CAUSTIC_GLSL = `
+float causticPat(vec2 uv, float time){
+  vec2 p = mod(uv * 6.28318, 6.28318) - 250.0;
+  vec2 i = p; float c = 1.0; float inten = 0.005;
+  for (int n = 0; n < 4; n++) {
+    float t = time * (1.0 - (3.5 / float(n + 1)));
+    i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+    c += 1.0 / length(vec2(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
+  }
+  c /= 4.0; c = 1.17 - pow(c, 1.4);
+  return clamp(pow(abs(c), 8.0), 0.0, 2.5);
+}
+`;
+const causticU = { uTime: { value: 0 }, uCColor: { value: new THREE.Color() }, uCRect: { value: new THREE.Vector4() }, uCShift: { value: new THREE.Vector2() } };
+function addCaustics(mat) {
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, causticU);
+    sh.vertexShader = 'varying vec3 vCW;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvCW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = 'varying vec3 vCW;\nuniform float uTime; uniform vec3 uCColor; uniform vec4 uCRect; uniform vec2 uCShift;\n' + CAUSTIC_GLSL +
+      sh.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      {
+        vec2 q = vCW.xz - uCShift;
+        float m = smoothstep(uCRect.x, uCRect.x + 0.025, q.x) * smoothstep(uCRect.z, uCRect.z - 0.025, q.x)
+                * smoothstep(uCRect.y, uCRect.y + 0.025, q.y) * smoothstep(uCRect.w, uCRect.w - 0.025, q.y);
+        if (m > 0.0 && vCW.y < 0.02) totalEmissiveRadiance += uCColor * causticPat(q * 6.5, uTime * 0.55) * m;
+      }`);
+  };
+  mat.customProgramCacheKey = () => 'caustic-v1';
+  return mat;
+}
+
+// ===================================================================
+// 4. 物体：几何、材质、物理采样点
+// ===================================================================
+function fibSphere(n) { const pts = [], ga = Math.PI * (3 - Math.sqrt(5)); for (let i = 0; i < n; i++) { const y = 1 - (i / (n - 1)) * 2, r = Math.sqrt(1 - y * y), th = ga * i; pts.push(new THREE.Vector3(Math.cos(th) * r, y, Math.sin(th) * r)); } return pts; }
+
+function shapeSamples(shape) {
+  const buoy = [], contacts = []; let V, rb;
+  if (shape.type === 'box') {
+    const { hx, hy, hz } = shape; V = 8 * hx * hy * hz;
+    const nx = 4, ny = 3, nz = 4;
+    for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) for (let k = 0; k < nz; k++)
+      buoy.push(new THREE.Vector3(hx * (-1 + (2 * i + 1) / nx), hy * (-1 + (2 * j + 1) / ny), hz * (-1 + (2 * k + 1) / nz)));
+    rb = hy / ny;
+    for (const sx of [-1, 0, 1]) for (const sy of [-1, 0, 1]) for (const sz of [-1, 0, 1]) if (sx || sy || sz) contacts.push({ p: new THREE.Vector3(sx * hx, sy * hy, sz * hz), r: 0 });
+  } else if (shape.type === 'ellipsoid') {
+    const { rx, ry, rz } = shape; V = 4 / 3 * Math.PI * rx * ry * rz;
+    const n = 5;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) for (let k = 0; k < n; k++) {
+      const u = -1 + (2 * i + 1) / n, v = -1 + (2 * j + 1) / n, w = -1 + (2 * k + 1) / n;
+      if (u * u + v * v + w * w <= 1.0) buoy.push(new THREE.Vector3(u * rx, v * ry, w * rz));
+    }
+    rb = ry / n;
+    for (const p of fibSphere(34)) contacts.push({ p: new THREE.Vector3(p.x * rx, p.y * ry, p.z * rz), r: 0 });
+  } else if (shape.type === 'rod') {
+    const { len, r } = shape; V = Math.PI * r * r * len;
+    for (let i = 0; i < 9; i++) buoy.push(new THREE.Vector3(-len / 2 + len * (i + 0.5) / 9, 0, 0));
+    rb = r;
+    for (let i = 0; i < 7; i++) contacts.push({ p: new THREE.Vector3(-len / 2 + len * i / 6, 0, 0), r });
+    contacts.push({ p: new THREE.Vector3(-len / 2, 0, 0), r: shape.headR || r });
+  }
+  return { buoy, contacts, V, rb };
+}
+
+// 各物体的网格（中心 = 几何中心，再按质心偏移平移）
+function latheFromProfile(fn, n = 48, seg = 48) {
+  const pts = []; for (let i = 0; i <= n; i++) { const a = (i / n) * Math.PI; const p = fn(a); pts.push(new THREE.Vector2(Math.max(0.00001, p[0]), p[1])); }
+  const g = new THREE.LatheGeometry(pts, seg); g.computeVertexNormals(); return g;
+}
+
+function buildApple() {
+  const Rr = 0.038, grp = new THREE.Group();
+  const geo = latheFromProfile((a) => {
+    let x = Rr * Math.sin(a) * (1 + 0.10 * -Math.cos(a)) * (1 - 0.04 * Math.sin(a * 2));
+    let y = -0.92 * Rr * Math.cos(a);
+    y -= 0.20 * Rr * Math.exp(-Math.pow((Math.PI - a) / 0.38, 2));
+    y += 0.12 * Rr * Math.exp(-Math.pow(a / 0.32, 2));
+    return [x, y];
+  });
+  const n = makeNoise(21);
+  const tex = texFromCanvas(pixelCanvas(512, 256, (x, y) => {
+    const v = 1 - y / 256; // 0 底 → 1 顶
+    const streak = fbm(n, x * 0.05, y * 0.008, 3);
+    const blush = fbm(n, x * 0.006, y * 0.01, 3);
+    let c = mix3(rgb('#d9b44a'), rgb('#b3141c'), smooth(0.15, 0.55, blush + 0.25));
+    c = mix3(c, rgb('#e2552d'), clamp((streak - 0.5) * 1.6, 0, 1) * 0.5);
+    c = mix3(c, rgb('#7a0c14'), smooth(0.75, 1.0, v) * 0.45);
+    if (fbm(n, x * 0.6, y * 0.6, 1) > 0.86) c = mix3(c, rgb('#f1d58a'), 0.6);
+    return c;
+  }));
+  const m = new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.35, sheen: 0.2, sheenColor: hex('#ffd2b0') });
+  grp.add(new THREE.Mesh(geo, m));
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.0016, 0.0022, 0.018, 8), new THREE.MeshStandardMaterial({ color: '#5a3b1e', roughness: 0.9 }));
+  stem.position.set(0.002, 0.034, 0); stem.rotation.z = -0.25; grp.add(stem);
+  const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.009, 12, 8), new THREE.MeshStandardMaterial({ color: '#4f8a2b', roughness: 0.6 }));
+  leaf.scale.set(1, 0.18, 0.5); leaf.position.set(0.011, 0.04, 0.002); leaf.rotation.z = 0.5; grp.add(leaf);
+  return grp;
+}
+function buildOrange(peeled) {
+  const r = peeled ? 0.032 : 0.037, grp = new THREE.Group();
+  const geo = new THREE.SphereGeometry(r, 64, 48); geo.scale(1, peeled ? 0.93 : 0.95, 1);
+  const n = makeNoise(peeled ? 41 : 33);
+  if (!peeled) {
+    const tex = texFromCanvas(pixelCanvas(512, 256, (x, y) => { const f = fbm(n, x * 0.02, y * 0.04, 3); return mix3(rgb('#e8780f'), rgb('#f6a12a'), f); }));
+    const bump = texFromCanvas(pixelCanvas(512, 256, (x, y) => { const d = n(x * 0.7, y * 0.7); const v = 255 * (1 - Math.pow(d, 3)); return [v, v, v]; }), { srgb: false });
+    grp.add(new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ map: tex, bumpMap: bump, bumpScale: 1.4, roughness: 0.5, clearcoat: 0.25, clearcoatRoughness: 0.5 })));
+    const navel = new THREE.Mesh(new THREE.CircleGeometry(0.004, 12), new THREE.MeshStandardMaterial({ color: '#6d6a2a', roughness: 0.8 }));
+    navel.rotation.x = -Math.PI / 2; navel.position.y = r * 0.95 + 0.0002; grp.add(navel);
+  } else {
+    const seg = 11;
+    const tex = texFromCanvas(pixelCanvas(512, 256, (x, y) => {
+      const u = x / 512; const line = Math.pow(Math.abs(Math.cos(u * seg * Math.PI)), 60);
+      const f = fbm(n, x * 0.05, y * 0.03, 3);
+      let c = mix3(rgb('#f2a446'), rgb('#f8c37a'), f);
+      c = mix3(c, rgb('#fbf1df'), clamp(line * 1.2 + (fbm(n, x * 0.2, y * 0.08, 2) > 0.72 ? 0.35 : 0), 0, 0.9));
+      return c;
+    }));
+    const bump = texFromCanvas(pixelCanvas(512, 256, (x, y) => { const u = x / 512; const g = 1 - Math.pow(Math.abs(Math.cos(u * seg * Math.PI)), 14); const v = 255 * clamp(g * 0.85 + n(x * 0.3, y * 0.3) * 0.15, 0, 1); return [v, v, v]; }), { srgb: false });
+    grp.add(new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ map: tex, bumpMap: bump, bumpScale: 2.5, roughness: 0.38, sheen: 0.6, sheenColor: hex('#fff0d8'), transmission: 0, clearcoat: 0.4, clearcoatRoughness: 0.4 })));
+  }
+  return grp;
+}
+function buildEgg(com) {
+  const rx = 0.022, ry = 0.029;
+  const geo = latheFromProfile((a) => [rx * Math.sin(a) * (1 + 0.11 * Math.cos(a)), -ry * Math.cos(a)]);
+  geo.translate(0, -com, 0);
+  const n = makeNoise(51);
+  const tex = texFromCanvas(pixelCanvas(512, 256, (x, y) => {
+    let c = mix3(rgb('#c48a58'), rgb('#d9a77a'), fbm(n, x * 0.01, y * 0.02, 3));
+    if (n(x * 0.9, y * 0.9) > 0.9) c = mix3(c, rgb('#9a6338'), 0.45);
+    return c;
+  }));
+  return new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.62, sheen: 0.3, sheenColor: hex('#fff3e6') }));
+}
+function buildWood(shape) {
+  const { hx, hy, hz } = shape;
+  const tex = texFromCanvas(woodCanvas('#d9b07a', '#9a6634', 512, 256, 7, 1.2));
+  const endTex = texFromCanvas(pixelCanvas(256, 256, (x, y) => { const d = Math.hypot(x - 40, y - 300) / 9 + fbm(noiseA, x * 0.03, y * 0.03, 3) * 3; const s = Math.pow(Math.abs(Math.sin(d * Math.PI)), 5); return mix3(rgb('#d4a56c'), rgb('#94612f'), s * 0.7); }));
+  const side = new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.72, clearcoat: 0.08 });
+  const end = new THREE.MeshPhysicalMaterial({ map: endTex, roughness: 0.85 });
+  const geo = new THREE.BoxGeometry(hx * 2, hy * 2, hz * 2, 1, 1, 1);
+  // 圆一点点的边：用 bevel 太贵，改用法线贴图感的轻微明暗即可
+  return new THREE.Mesh(geo, [end, end, side, side, side, side]);
+}
+function buildStone(shape) {
+  const geo = new THREE.IcosahedronGeometry(1, 5);
+  const pos = geo.attributes.position, v = new THREE.Vector3(), colors = [];
+  const n = makeNoise(77);
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const d = 1 + (fbm(n, v.x * 1.6 + 5, v.y * 1.6 + v.z * 1.3 + 9, 4) - 0.5) * 0.28 + (n(v.x * 9 + 3, v.z * 9 + v.y * 4) - 0.5) * 0.03;
+    v.multiplyScalar(d); v.set(v.x * shape.rx, v.y * shape.ry, v.z * shape.rz);
+    pos.setXYZ(i, v.x, v.y, v.z);
+    const t = fbm(n, v.x * 80 + 1, v.y * 80 + v.z * 60, 3);
+    const c = mix3(rgb('#5c5853'), rgb('#9a958c'), t); const speck = n(v.x * 900, v.z * 900 + v.y * 700) > 0.82 ? 0.25 : 0;
+    colors.push(...mix3(c, rgb('#d9d4c8'), speck).map(x => Math.pow(x / 255, 2.2)));
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 }));
+}
+function buildNail(shape) {
+  const grp = new THREE.Group(), L = shape.len, r = shape.r;
+  const metal = new THREE.MeshStandardMaterial({ color: '#b9bcc1', metalness: 1, roughness: 0.32 });
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L - 0.009, 16), metal); shaft.rotation.z = Math.PI / 2; shaft.position.x = -0.0045 + 0.0002; grp.add(shaft);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(r, 0.009, 16), metal); tip.rotation.z = -Math.PI / 2; tip.position.x = L / 2 - 0.0045; grp.add(tip);
+  const head = new THREE.Mesh(new THREE.CylinderGeometry(shape.headR, shape.headR, 0.0016, 24), metal); head.rotation.z = Math.PI / 2; head.position.x = -L / 2; grp.add(head);
+  return grp;
+}
+
+const OBJECT_DEFS = [
+  { id: 'wood', name: '木块', rho: 600, shape: { type: 'box', hx: 0.040, hy: 0.022, hz: 0.028 }, build: buildWood },
+  { id: 'apple', name: '苹果', rho: 820, shape: { type: 'ellipsoid', rx: 0.038, ry: 0.035, rz: 0.038 }, build: buildApple },
+  { id: 'orange', name: '橙子', rho: 870, shape: { type: 'ellipsoid', rx: 0.037, ry: 0.035, rz: 0.037 }, build: () => buildOrange(false) },
+  { id: 'peeled', name: '剥皮橙子', rho: 1040, shape: { type: 'ellipsoid', rx: 0.032, ry: 0.030, rz: 0.032 }, build: () => buildOrange(true) },
+  { id: 'egg', name: '鸡蛋', rho: 1065, shape: { type: 'ellipsoid', rx: 0.022, ry: 0.029, rz: 0.022 }, com: 0.0025, restRot: [0, 0, Math.PI / 2], build: (s, d) => buildEgg(d.com) },
+  { id: 'stone', name: '石头', rho: 2600, shape: { type: 'ellipsoid', rx: 0.033, ry: 0.021, rz: 0.027 }, build: buildStone },
+  { id: 'nail', name: '铁钉', rho: 7850, shape: { type: 'rod', len: 0.075, r: 0.0028, headR: 0.0058 }, restRot: [0, 0.5, 0], build: buildNail },
+];
+
+// ===================================================================
+// 5. 水面：高度场波动（真实的波传递 + 体积守恒）
+// ===================================================================
+class Water {
+  constructor() {
+    this.nx = 60; this.nz = 36;
+    this.dx = TANK.W / (this.nx - 1); this.dz = TANK.D / (this.nz - 1);
+    const N = this.nx * this.nz;
+    this.h = new Float32Array(N).fill(TANK.floor + BASE_DEPTH);
+    this.v = new Float32Array(N); this.tmp = new Float32Array(N);
+    this.cellA = this.dx * this.dz;
+  }
+  idx(i, j) { return j * this.nx + i; }
+  inside(x, z) { return x > TANK.x0 && x < TANK.x1 && z > TANK.z0 && z < TANK.z1; }
+  sample(x, z) {
+    if (!this.inside(x, z)) return -Infinity;
+    const fx = (x - TANK.x0) / this.dx, fz = (z - TANK.z0) / this.dz;
+    const i = clamp(Math.floor(fx), 0, this.nx - 2), j = clamp(Math.floor(fz), 0, this.nz - 2);
+    const u = fx - i, w = fz - j, h = this.h, k = this.idx(i, j);
+    return (h[k] * (1 - u) + h[k + 1] * u) * (1 - w) + (h[k + this.nx] * (1 - u) + h[k + this.nx + 1] * u) * w;
+  }
+  forCells(x, z, r0, r1, fn) {
+    const i0 = clamp(Math.floor((x - r1 - TANK.x0) / this.dx), 0, this.nx - 1), i1 = clamp(Math.ceil((x + r1 - TANK.x0) / this.dx), 0, this.nx - 1);
+    const j0 = clamp(Math.floor((z - r1 - TANK.z0) / this.dz), 0, this.nz - 1), j1 = clamp(Math.ceil((z + r1 - TANK.z0) / this.dz), 0, this.nz - 1);
+    let c = 0;
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const d = Math.hypot(TANK.x0 + i * this.dx - x, TANK.z0 + j * this.dz - z);
+      if (d >= r0 && d <= r1) { fn(this.idx(i, j), d); c++; }
+    }
+    return c;
+  }
+  displace(x, z, R, dV) { // 物体排开的水被推到周围，形成水冠
+    if (!dV) return;
+    let n = this.forCells(x, z, R * 0.9, R * 1.9, () => {});
+    if (!n) return;
+    const amt = dV / (n * this.cellA);
+    this.forCells(x, z, R * 0.9, R * 1.9, (k) => { this.h[k] += amt; });
+  }
+  couple(x, z, R, vy, k) { this.forCells(x, z, 0, R * 0.85, (c) => { this.v[c] += (vy - this.v[c]) * k; }); }
+  poke(x, z, amt) { if (!this.inside(x, z)) return; this.forCells(x, z, 0, 0.012, (k) => { this.v[k] += amt; }); }
+  step(dt) {
+    const { nx, nz, h, v } = this, c2 = 0.78 * 0.78, inv = 1 / (this.dx * this.dz), damp = 1 - 1.4 * dt;
+    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+      const k = j * nx + i, hc = h[k];
+      const hl = h[i > 0 ? k - 1 : k], hr = h[i < nx - 1 ? k + 1 : k], hu = h[j > 0 ? k - nx : k], hd = h[j < nz - 1 ? k + nx : k];
+      v[k] = (v[k] + c2 * (hl + hr + hu + hd - 4 * hc) * inv * dt) * damp;
+    }
+    for (let k = 0; k < h.length; k++) h[k] += v[k] * dt;
+  }
+  relax(targetMean, dt) {
+    let s = 0; for (let k = 0; k < this.h.length; k++) s += this.h[k];
+    const d = (targetMean - s / this.h.length) * Math.min(1, 4 * dt);
+    for (let k = 0; k < this.h.length; k++) this.h[k] += d;
+  }
+}
+
+// ===================================================================
+// 6. 刚体：按「浸在水里的那部分体积」算浮力，力作用在各点 → 会自然翻转、找到姿态
+// ===================================================================
+const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
+class Body {
+  constructor(def, mesh, home) {
+    this.def = def; this.mesh = mesh; this.name = def.name;
+    const s = shapeSamples(def.shape);
+    const com = def.com || 0;
+    this.buoy = s.buoy.map(p => p.clone().sub(new THREE.Vector3(0, com, 0)));
+    this.contacts = s.contacts.map(c => ({ p: c.p.clone().sub(new THREE.Vector3(0, com, 0)), r: c.r }));
+    this.V = s.V; this.rb = s.rb; this.rho = def.rho; this.m = def.rho * s.V;
+    this.vi = s.V / this.buoy.length;
+    // 惯量（以采样点近似，再加一点避免细长物体退化）
+    const I = new THREE.Vector3(); const mi = this.m / this.buoy.length;
+    for (const p of this.buoy) { I.x += mi * (p.y * p.y + p.z * p.z); I.y += mi * (p.x * p.x + p.z * p.z); I.z += mi * (p.x * p.x + p.y * p.y); }
+    const ext = Math.cbrt(s.V); I.addScalar(this.m * ext * ext * 0.04);
+    this.Iinv = new THREE.Vector3(1 / I.x, 1 / I.y, 1 / I.z);
+    this.R = Math.max(...this.contacts.map(c => c.p.length() + c.r));
+    this.collR = Math.cbrt(3 * s.V / (4 * Math.PI)) * 1.12;
+    this.Aproj = Math.pow(s.V, 2 / 3) * 1.25;
+    this.pos = new THREE.Vector3(); this.quat = new THREE.Quaternion(); this.vel = new THREE.Vector3(); this.w = new THREE.Vector3();
+    this.home = home; this.grabbed = false; this.target = new THREE.Vector3();
+    this.sub = 0; this.prevSub = 0; this.subFrac = 0; this.touchFloor = false; this.onPan = 0; this.sleep = 0; this.asleep = false;
+    this.steady = 0; this.inTank = false; this.lastAbove = true;
+    this.wr = this.buoy.map(() => new THREE.Vector3());
+  }
+  goHome() { // 回到物品架（离开场景）
+    this.active = false; this.mesh.visible = false; this.grabbed = false; this.onScale = false;
+    this.pos.set(0, -5, 0); this.vel.set(0, 0, 0); this.w.set(0, 0, 0); this.sub = this.prevSub = this.subFrac = 0; this.inTank = false; this.onPan = 0; this.steady = 0;
+  }
+  placeAt(x, yAbove, z) { // 放进场景：yAbove = 物体最低点离地高度
+    const r = this.def.restRot || [0, 0, 0];
+    this.quat.setFromEuler(new THREE.Euler(r[0], r[1], r[2]));
+    let minY = Infinity; for (const c of this.contacts) { _v1.copy(c.p).applyQuaternion(this.quat); minY = Math.min(minY, _v1.y - c.r); }
+    this.pos.set(x, yAbove - minY, z); this.vel.set(0, 0, 0); this.w.set(0, 0, 0);
+    this.active = true; this.mesh.visible = true; this.asleep = false; this.sleep = 0; this.lastAbove = true; this.lastP = null; this.steady = 0;
+  }
+  applyIinv(vec, out) { _qi.copy(this.quat).invert(); out.copy(vec).applyQuaternion(_qi).multiply(this.Iinv).applyQuaternion(this.quat); return out; }
+}
+
+// ===================================================================
+// 7. 画风（三套场景）
+// ===================================================================
+const STYLES = {
+  kitchen: {
+    sub: '3D 原型 · 画风 A', adj: '温暖 · 生活 · 亲切',
+    text: '就在家里的厨房做实验：木砧板台面、白瓷砖墙、窗边斜进来的暖阳。孩子会觉得「回家也能试」，最贴近 DSKP 的生活化活动建议。',
+    exposure: 1.0, envI: 0.55, hemi: ['#fff1dc', '#7a5a3c', 0.5],
+    sun: { color: '#ffd9a8', i: 3.4, dir: [-1.15, 1.45, 0.75], radius: 6 },
+    water: { atten: '#8fd6c8', dist: 0.42 }, caustic: ['#ffe9c0', 0.42], glassEdge: '#a7d9c6',
+  },
+  lab: {
+    sub: '3D 原型 · 画风 B', adj: '清爽 · 精准 · 专注',
+    text: '黑色环氧树脂实验台、带厘米刻度的玻璃水槽、电子天平，像真正的科学实验室。轮廓最清楚，最适合投影讲解与读数。',
+    exposure: 1.05, envI: 1.0, hemi: ['#ffffff', '#3a414c', 0.3],
+    sun: { color: '#f3f7ff', i: 2.6, dir: [0.55, 1.7, 0.9], radius: 4 },
+    water: { atten: '#a9d8f5', dist: 0.5 }, caustic: ['#e8f4ff', 0.55], glassEdge: '#b9dccf',
+  },
+  outdoor: {
+    sub: '3D 原型 · 画风 C', adj: '明亮 · 活泼 · 玩水',
+    text: '户外大太阳下的木桌、透明水箱，水底光纹最明显、影子最清楚。最有「玩水」的感觉，课堂气氛最热闹。',
+    exposure: 1.0, envI: 0.7, hemi: ['#cfeaff', '#557a35', 0.75],
+    sun: { color: '#fff3dc', i: 4.2, dir: [0.75, 2.2, 0.55], radius: 1.5 },
+    water: { atten: '#6ccdf0', dist: 0.38 }, caustic: ['#fffbe8', 1.0], glassEdge: '#9fd2e6',
+  },
+};
+
+function labelCanvas(text, { font, color, bg, w = 256, h = 128, size = 64, sub, subFont, round = 18 }) {
+  return canvas2d(w, h, (g) => {
+    if (bg) { g.fillStyle = bg; g.beginPath(); g.roundRect(4, 4, w - 8, h - 8, round); g.fill(); }
+    g.fillStyle = color; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `${size}px ${font}`; g.fillText(text, w / 2, sub ? h * 0.42 : h / 2);
+    if (sub) { g.font = subFont; g.globalAlpha = 0.7; g.fillText(sub, w / 2, h * 0.78); }
+  });
+}
+
+function buildEnvironment(style, scene) {
+  const st = STYLES[style];
+  const out = { pickables: [], counterMat: null };
+  // 台面
+  let counterMat;
+  if (style === 'kitchen') {
+    const tex = texFromCanvas(woodCanvas('#d7b083', '#b98a5c', 1024, 512, 4, 3), { repeat: [1, 1] });
+    // 拼接木条（砧板台面）
+    const strips = texFromCanvas(canvas2d(1024, 512, (g) => { g.drawImage(tex.image, 0, 0); g.globalAlpha = 0.06; for (let i = 0; i < 14; i++) { g.fillStyle = i % 2 ? '#5a3816' : '#fff3df'; g.fillRect(0, i * 512 / 14, 1024, 512 / 14); } g.globalAlpha = 0.22; g.fillStyle = '#4a2e14'; for (let i = 1; i < 14; i++) g.fillRect(0, i * 512 / 14 - 1, 1024, 1.5); }));
+    counterMat = new THREE.MeshPhysicalMaterial({ map: strips, roughness: 0.55, clearcoat: 0.35, clearcoatRoughness: 0.45 });
+  } else if (style === 'lab') {
+    const n = makeNoise(5);
+    const tex = texFromCanvas(pixelCanvas(512, 512, (x, y) => mix3(rgb('#1b1f25'), rgb('#262b33'), fbm(n, x * 0.01, y * 0.01, 4))));
+    counterMat = new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.62, clearcoat: 0.35, clearcoatRoughness: 0.35, envMapIntensity: 0.18 });
+  } else {
+    const c = canvas2d(1024, 512, (g, w, h) => {
+      const planks = 6;
+      for (let i = 0; i < planks; i++) {
+        const wc = woodCanvas(['#cdb48c', '#c9ae86', '#d3bb95'][i % 3], '#8d7350', 1024, Math.ceil(h / planks), 20 + i, 4);
+        g.drawImage(wc, 0, i * h / planks);
+      }
+      g.fillStyle = 'rgba(40,28,15,.75)'; for (let i = 1; i < planks; i++) g.fillRect(0, i * h / planks - 2, w, 4);
+      g.globalAlpha = 0.08; g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+    });
+    counterMat = new THREE.MeshPhysicalMaterial({ map: texFromCanvas(c), roughness: 0.82 });
+  }
+  addCaustics(counterMat);
+  const counter = new THREE.Mesh(new THREE.BoxGeometry(COUNTER.x1 - COUNTER.x0 + 0.6, 0.05, COUNTER.z1 - COUNTER.z0), counterMat);
+  counter.position.set(0, -0.025, (COUNTER.z0 + COUNTER.z1) / 2); counter.receiveShadow = true; scene.add(counter);
+
+  if (style === 'kitchen') {
+    // 白色地铁砖墙
+    const tiles = texFromCanvas(canvas2d(1024, 1024, (g, w, h) => {
+      g.fillStyle = '#d6d0c6'; g.fillRect(0, 0, w, h);
+      const tw = 128, th = 64, gap = 5, n = makeNoise(13);
+      for (let row = 0; row < h / th; row++) for (let col = -1; col < w / tw + 1; col++) {
+        const x = col * tw + (row % 2 ? tw / 2 : 0), y = row * th;
+        const tone = 236 + n(col * 3.1, row * 2.7) * 14;
+        const grd = g.createLinearGradient(x, y, x, y + th);
+        grd.addColorStop(0, `rgb(${tone + 6},${tone + 4},${tone})`); grd.addColorStop(1, `rgb(${tone - 10},${tone - 12},${tone - 16})`);
+        g.fillStyle = grd; g.beginPath(); g.roundRect(x + gap / 2, y + gap / 2, tw - gap, th - gap, 6); g.fill();
+      }
+    }), { repeat: [3, 1.6] });
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.8), new THREE.MeshPhysicalMaterial({ map: tiles, roughness: 0.18, clearcoat: 0.7, clearcoatRoughness: 0.12 }));
+    wall.position.set(0, 0.85, COUNTER.z0); wall.receiveShadow = true; scene.add(wall);
+    // 窗光在墙上的暖色光斑
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.75), new THREE.MeshBasicMaterial({ map: texFromCanvas(canvas2d(256, 256, (g) => { const r = g.createRadialGradient(128, 128, 10, 128, 128, 128); r.addColorStop(0, 'rgba(255,214,150,.28)'); r.addColorStop(1, 'rgba(255,214,150,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); })), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    glow.position.set(0.25, 0.42, COUNTER.z0 + 0.002); scene.add(glow);
+    // 台面前缘
+    const lip = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.9, 0.05), new THREE.MeshStandardMaterial({ color: '#efe6d8', roughness: 0.6 }));
+    lip.position.set(0, -0.5, COUNTER.z1 - 0.02); scene.add(lip);
+    // 背景小植物（罗勒）
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.09, 24), new THREE.MeshStandardMaterial({ color: '#b65a35', roughness: 0.8 }));
+    pot.position.set(-0.47, 0.045, -0.28); pot.castShadow = true; scene.add(pot);
+    const leafMat = new THREE.MeshStandardMaterial({ color: '#3f7f2d', roughness: 0.55 });
+    for (let i = 0; i < 26; i++) { const l = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), leafMat); l.scale.set(1, 0.35, 0.65); l.position.set(-0.47 + R(-0.05, 0.05), 0.11 + R(0, 0.1), -0.28 + R(-0.04, 0.04)); l.rotation.set(R(-1, 1), R(0, 6), R(-1, 1)); l.castShadow = true; scene.add(l); }
+  } else if (style === 'lab') {
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), new THREE.MeshStandardMaterial({ color: '#dfe4ea', roughness: 0.95 }));
+    back.position.set(0, 1.0, -1.1); back.receiveShadow = true; scene.add(back);
+    const edge = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.9, 0.05), new THREE.MeshStandardMaterial({ color: '#9aa3ad', roughness: 0.5, metalness: 0.3 }));
+    edge.position.set(0, -0.5, COUNTER.z1 - 0.02); scene.add(edge);
+    // 后方的实验器材剪影：烧杯、量筒
+    const glassM = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.05, transparent: true, opacity: 0.22, envMapIntensity: 1.6, depthWrite: false });
+    const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.12, 32, 1, true), glassM); b1.position.set(-0.58, 0.06, -0.28); scene.add(b1);
+    const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.26, 24, 1, true), glassM); b2.position.set(-0.5, 0.13, -0.33); scene.add(b2);
+    const liq = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.043, 0.05, 32), new THREE.MeshStandardMaterial({ color: '#4fb3d9', roughness: 0.2, transparent: true, opacity: 0.6 })); liq.position.set(-0.58, 0.025, -0.28); scene.add(liq);
+  } else {
+    // 柔焦背景（像相机景深拍出来的草地、树林、天空），比低多边形树更接近真实
+    const bg = canvas2d(2048, 1024, (g, w, h) => {
+      const hz = h * 0.47; // 树林底线
+      const sky = g.createLinearGradient(0, 0, 0, hz); sky.addColorStop(0, '#4aa8ea'); sky.addColorStop(0.6, '#9fd5f6'); sky.addColorStop(1, '#dff1fb');
+      g.fillStyle = sky; g.fillRect(0, 0, w, hz + 40);
+      const r2 = mulberry32(8);
+      const blob = (x, y, r, col, blur) => { g.save(); g.shadowColor = col; g.shadowBlur = blur; g.shadowOffsetX = 10000; g.fillStyle = col; g.beginPath(); g.arc(x - 10000, y, r, 0, Math.PI * 2); g.fill(); g.restore(); };
+      // 白云
+      for (let i = 0; i < 9; i++) { const cx = r2() * w, cy = h * (0.06 + r2() * 0.18); for (let k = 0; k < 5; k++) blob(cx + (r2() - 0.5) * 220, cy + (r2() - 0.5) * 40, 50 + r2() * 60, 'rgba(255,255,255,.75)', 60); }
+      // 远树林（三层，越远越淡越蓝）
+      const layers = [['#9dbfa6', 0.92, 60], ['#6c9f68', 0.98, 40], ['#4a8045', 1.0, 26]];
+      layers.forEach(([col, a, blur], li) => { for (let i = 0; i < 70; i++) { const x = (i / 70) * w + (r2() - 0.5) * 60; const y = hz - 10 - r2() * (60 - li * 15) + li * 12; blob(x, y, 26 + r2() * 34, col, blur); } });
+      // 椰子树剪影两棵
+      for (const [px, ph] of [[w * 0.82, 170], [w * 0.88, 140]]) { g.save(); g.shadowColor = '#3b4a2a'; g.shadowBlur = 18; g.shadowOffsetX = 10000; g.strokeStyle = '#3b4a2a'; g.lineWidth = 9; g.beginPath(); g.moveTo(px - 10000, hz + 20); g.quadraticCurveTo(px - 10000 + 30, hz - ph / 2, px - 10000 + 10, hz - ph); g.stroke(); g.fillStyle = '#2f5a2a'; for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; g.beginPath(); g.ellipse(px - 10000 + 10 + Math.cos(a) * 40, hz - ph + Math.sin(a) * 14, 52, 9, a, 0, Math.PI * 2); g.fill(); } g.restore(); }
+      // 草地
+      const lawn = g.createLinearGradient(0, hz, 0, h); lawn.addColorStop(0, '#8dbb55'); lawn.addColorStop(0.5, '#6ea640'); lawn.addColorStop(1, '#4f8a2f');
+      g.fillStyle = lawn; g.fillRect(0, hz, w, h - hz);
+      for (let i = 0; i < 260; i++) blob(r2() * w, hz + r2() * (h - hz), 20 + r2() * 50, r2() > 0.5 ? 'rgba(60,110,35,.35)' : 'rgba(170,205,100,.3)', 30);
+    });
+    const backdrop = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 3.6), new THREE.MeshBasicMaterial({ map: texFromCanvas(bg), fog: false }));
+    backdrop.position.set(0, -0.3, -2.4); scene.add(backdrop);
+    const lawnTex = texFromCanvas(pixelCanvas(256, 256, (x, y) => mix3(rgb('#5d9a38'), rgb('#7fb04a'), fbm(noiseB, x * 0.03, y * 0.03, 4))), { repeat: [12, 12] });
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshStandardMaterial({ map: lawnTex, roughness: 1 }));
+    ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.78, 0); scene.add(ground);
+    const legM = new THREE.MeshStandardMaterial({ color: '#8d7350', roughness: 0.9 });
+    for (const [x, z] of [[-0.75, -0.36], [0.75, -0.36], [-0.75, 0.44], [0.75, 0.44]]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.75, 0.06), legM); leg.position.set(x, -0.42, z); leg.castShadow = true; scene.add(leg); }
+  }
+  out.counterMat = counterMat;
+
+  // 盐罐、糖罐（也可直接点）
+  const jarDefs = style === 'kitchen'
+    ? [{ kind: 'salt', label: '盐', body: '#f4efe6', lid: '#3f6f8f', font: '"ZCOOL KuaiLe"', x: 0.20, z: -0.28 }, { kind: 'sugar', label: '糖', body: '#f4efe6', lid: '#c0603a', font: '"ZCOOL KuaiLe"', x: 0.33, z: -0.30 }]
+    : style === 'lab'
+      ? [{ kind: 'salt', label: '盐', sub: 'NaCl', body: '#ffffff', lid: '#1d2633', font: '"Noto Sans SC"', glass: true, x: 0.30, z: -0.27 }, { kind: 'sugar', label: '糖', sub: 'C₁₂H₂₂O₁₁', body: '#ffffff', lid: '#1d2633', font: '"Noto Sans SC"', glass: true, x: 0.46, z: -0.29 }]
+      : [{ kind: 'salt', label: '盐', body: '#e8f6ff', lid: '#1f8fd6', font: '"ZCOOL QingKe HuangYou"', x: 0.30, z: -0.27 }, { kind: 'sugar', label: '糖', body: '#fff4e2', lid: '#f2a516', font: '"ZCOOL QingKe HuangYou"', x: 0.46, z: -0.29 }];
+  for (const j of jarDefs) {
+    const grp = new THREE.Group();
+    const bodyM = j.glass ? new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.06, transparent: true, opacity: 0.35, envMapIntensity: 1.5 }) : new THREE.MeshPhysicalMaterial({ color: j.body, roughness: 0.25, clearcoat: 0.8 });
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.05, 0.12, 40), bodyM); b.position.y = 0.06; b.castShadow = true; grp.add(b);
+    if (j.glass) { const fill = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.046, 0.075, 32), new THREE.MeshStandardMaterial({ color: '#f7f7f5', roughness: 0.95 })); fill.position.y = 0.04; grp.add(fill); }
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.022, 40), new THREE.MeshStandardMaterial({ color: j.lid, roughness: 0.45 })); lid.position.y = 0.131; lid.castShadow = true; grp.add(lid);
+    const lbl = new THREE.Mesh(new THREE.CylinderGeometry(0.0505, 0.0505, 0.05, 40, 1, true, -0.9, 1.8), new THREE.MeshStandardMaterial({ map: texFromCanvas(labelCanvas(j.label, { font: j.font, color: style === 'lab' ? '#0e1620' : '#2a241f', bg: style === 'lab' ? '#ffffff' : null, size: 72, sub: j.sub, subFont: '500 26px "IBM Plex Mono", monospace', round: 6 })), transparent: true, roughness: 0.6 }));
+    lbl.position.y = 0.065; lbl.rotation.y = -Math.atan2(j.x, 1.6); grp.add(lbl);
+    grp.position.set(j.x, 0, j.z);
+    grp.traverse(o => { o.userData.jar = j.kind; });
+    scene.add(grp); out.pickables.push(grp);
+  }
+  return out;
+}
+
+function buildTank(style, scene, st) {
+  const grp = new THREE.Group();
+  const glassM = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.04, metalness: 0, transparent: true, opacity: style === 'outdoor' ? 0.10 : 0.13, envMapIntensity: 1.6, depthWrite: false, side: THREE.DoubleSide });
+  const t = TANK.wall, W = TANK.W, D = TANK.D, H = TANK.H;
+  const add = (w, h, d, x, y, z, m = glassM) => { const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); mesh.position.set(x, y, z); grp.add(mesh); return mesh; };
+  add(W + 2 * t, H + TANK.floor, t, TANK.cx, (H + TANK.floor) / 2, TANK.z1 + t / 2);
+  add(W + 2 * t, H + TANK.floor, t, TANK.cx, (H + TANK.floor) / 2, TANK.z0 - t / 2);
+  add(t, H + TANK.floor, D, TANK.x0 - t / 2, (H + TANK.floor) / 2, TANK.cz);
+  add(t, H + TANK.floor, D, TANK.x1 + t / 2, (H + TANK.floor) / 2, TANK.cz);
+  add(W, TANK.floor, D, TANK.cx, TANK.floor / 2, TANK.cz);
+  // 玻璃边缘（真实玻璃的边是带绿的）
+  const edgeM = new THREE.MeshPhysicalMaterial({ color: st.glassEdge, roughness: 0.1, transparent: true, opacity: 0.55, depthWrite: false });
+  const e = 0.0035, HH = H + TANK.floor;
+  for (const x of [TANK.x0 - t / 2, TANK.x1 + t / 2]) for (const z of [TANK.z0 - t / 2, TANK.z1 + t / 2]) add(e * 2, HH, e * 2, x, HH / 2, z, edgeM);
+  for (const z of [TANK.z0 - t / 2, TANK.z1 + t / 2]) add(W + 2 * t, e, t, TANK.cx, HH, z, edgeM);
+  for (const x of [TANK.x0 - t / 2, TANK.x1 + t / 2]) add(t, e, D, x, HH, TANK.cz, edgeM);
+  if (style === 'outdoor') { // 压克力水箱的蓝色包边
+    const trim = new THREE.MeshStandardMaterial({ color: '#2a8fd0', roughness: 0.4 });
+    for (const z of [TANK.z0 - t / 2, TANK.z1 + t / 2]) add(W + 2 * t + 0.01, 0.014, t + 0.006, TANK.cx, HH - 0.004, z, trim);
+    for (const x of [TANK.x0 - t / 2, TANK.x1 + t / 2]) add(t + 0.006, 0.014, D + 0.01, x, HH - 0.004, TANK.cz, trim);
+  }
+  if (style === 'lab') { // 厘米刻度尺，印在前玻璃上
+    const c = canvas2d(96, 1024, (g, w, h) => {
+      g.fillStyle = '#0e1620'; g.font = '600 30px "IBM Plex Mono", monospace'; g.textAlign = 'left'; g.textBaseline = 'middle';
+      const cm = H * 100;
+      for (let i = 0; i <= cm; i++) {
+        const y = h - (i / cm) * (h - 20) - 10; const long = i % 5 === 0;
+        g.fillRect(0, y - 1.5, long ? 40 : 22, 3);
+        if (long && i > 0) g.fillText(String(i), 46, y);
+      }
+    });
+    const ruler = new THREE.Mesh(new THREE.PlaneGeometry(0.03, H), new THREE.MeshBasicMaterial({ map: texFromCanvas(c), transparent: true, depthWrite: false, opacity: 0.85 }));
+    ruler.position.set(TANK.x1 - 0.022, TANK.floor + H / 2, TANK.z1 + t + 0.0006); grp.add(ruler);
+    const unit = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 0.012), new THREE.MeshBasicMaterial({ map: texFromCanvas(labelCanvas('cm', { font: '"IBM Plex Mono"', color: '#0e1620', size: 60, w: 160, h: 64 })), transparent: true, depthWrite: false }));
+    unit.position.set(TANK.x1 - 0.022, TANK.rim + 0.012, TANK.z1 + t + 0.0006); grp.add(unit);
+  }
+  scene.add(grp);
+}
+
+function buildBalance(style, scene) {
+  const grp = new THREE.Group();
+  const bodyC = style === 'kitchen' ? '#f2efe9' : style === 'lab' ? '#3b434d' : '#26a3a0';
+  const base = new THREE.Mesh(new THREE.BoxGeometry(BAL.w, BAL.h, BAL.d), new THREE.MeshPhysicalMaterial({ color: bodyC, roughness: 0.35, clearcoat: 0.6 }));
+  base.position.y = BAL.h / 2; base.castShadow = true; base.receiveShadow = true; grp.add(base);
+  const steel = new THREE.MeshStandardMaterial({ color: '#d8dadd', metalness: 1, roughness: 0.22 });
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.006, 16), steel); stem.position.y = BAL.h + 0.003; grp.add(stem);
+  const pan = new THREE.Mesh(new THREE.CylinderGeometry(BAL.panR, BAL.panR, 0.003, 48), steel); pan.position.y = BAL.panTop - 0.0015; pan.castShadow = true; pan.receiveShadow = true; grp.add(pan);
+  const lcdC = canvas2d(320, 96, () => {});
+  const lcdTex = texFromCanvas(lcdC);
+  const lcd = new THREE.Mesh(new THREE.PlaneGeometry(0.09, 0.027), new THREE.MeshBasicMaterial({ map: lcdTex }));
+  lcd.position.set(0, BAL.h * 0.5, BAL.d / 2 + 0.0008); grp.add(lcd);
+  grp.position.set(BAL.x, 0, BAL.z); scene.add(grp);
+  let shown = -1;
+  const draw = (g) => {
+    if (g === shown) return; shown = g;
+    const ctx = lcdC.getContext('2d');
+    ctx.fillStyle = style === 'lab' ? '#0d1a14' : '#a9b89c'; ctx.fillRect(0, 0, 320, 96);
+    ctx.fillStyle = style === 'lab' ? '#5dff9d' : '#1d261a'; ctx.font = '600 60px "IBM Plex Mono", monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(g), 250, 52); ctx.font = '600 34px "IBM Plex Mono", monospace'; ctx.fillText('g', 300, 58);
+    lcdTex.needsUpdate = true;
+  };
+  draw(0);
+  return { draw };
+}
+
+// 汤匙
+function buildSpoon() {
+  const grp = new THREE.Group();
+  const steel = new THREE.MeshStandardMaterial({ color: '#d9dbde', metalness: 1, roughness: 0.18 });
+  const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.024, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), steel);
+  bowl.scale.set(1.25, 0.45, 0.9); bowl.material.side = THREE.DoubleSide; grp.add(bowl);
+  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.003, 0.011), steel); handle.position.set(0.082, 0.006, 0); handle.rotation.z = 0.12; grp.add(handle);
+  const heap = new THREE.Mesh(new THREE.SphereGeometry(0.02, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95 }));
+  heap.scale.set(1.15, 0.45, 0.8); heap.position.y = -0.004; grp.add(heap);
+  grp.userData.heap = heap; grp.traverse(o => { o.castShadow = true; });
+  return grp;
+}
+
+// ===================================================================
+// 8. 世界
+// ===================================================================
+class World {
+  constructor(style) {
+    this.style = style; const st = STYLES[style]; this.st = st;
+    rnd = mulberry32(11);
+    const scene = this.scene = new THREE.Scene();
+    scene.environment = envTex; scene.environmentIntensity = st.envI;
+    renderer.toneMappingExposure = st.exposure;
+    this.camera = new THREE.PerspectiveCamera(30, 1, 0.02, 40);
+    this.camTarget = new THREE.Vector3(-0.02, 0.11, 0.04);
+
+    scene.add(new THREE.HemisphereLight(st.hemi[0], st.hemi[1], st.hemi[2]));
+    const sun = this.sun = new THREE.DirectionalLight(st.sun.color, st.sun.i);
+    const sd = new THREE.Vector3(...st.sun.dir).normalize(); this.sunDir = sd;
+    sun.position.copy(sd).multiplyScalar(2.5); sun.target.position.set(0, 0, 0);
+    sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(sun.shadow.camera, { left: -0.9, right: 0.9, top: 0.9, bottom: -0.9, near: 0.5, far: 5 });
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.002; sun.shadow.radius = st.sun.radius;
+    scene.add(sun, sun.target);
+    if (style === 'lab') { const rim = new THREE.DirectionalLight('#dfe8ff', 1.2); rim.position.set(-0.6, 1.2, -1.6); scene.add(rim); }
+
+    const env = buildEnvironment(style, scene);
+    this.pickJars = env.pickables;
+    buildTank(style, scene, st);
+    this.balance = buildBalance(style, scene);
+
+    // 水体
+    this.water = new Water();
+    this.waterMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, roughness: 0.03, ior: 1.333, thickness: 0.03, attenuationColor: st.water.atten, attenuationDistance: st.water.dist, specularIntensity: 1, envMapIntensity: 1.1, transparent: false });
+    if (lowQuality) this.applyLowWater();
+    const W = this.water;
+    const surfGeo = new THREE.PlaneGeometry(TANK.W, TANK.D, W.nx - 1, W.nz - 1); surfGeo.rotateX(-Math.PI / 2);
+    this.surf = new THREE.Mesh(surfGeo, this.waterMat); this.surf.position.set(TANK.cx, 0, TANK.cz); scene.add(this.surf);
+    // 四面水墙（顶边跟着水面起伏）
+    this.skirts = [];
+    const mk = (n, xz) => {
+      const pos = new Float32Array(n * 2 * 3), idx = [];
+      for (let i = 0; i < n; i++) { const [x, z] = xz(i); pos.set([x, 0, z], i * 3); pos.set([x, TANK.floor, z], (n + i) * 3); }
+      for (let i = 0; i < n - 1; i++) { const t0 = i, t1 = i + 1, b0 = n + i, b1 = n + i + 1; idx.push(t0, b0, t1, t1, b0, b1); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setIndex(idx);
+      const m = new THREE.Mesh(g, this.waterMat); scene.add(m); return { g, n, m };
+    };
+    const nx = W.nx, nz = W.nz;
+    this.skirts.push({ ...mk(nx, i => [TANK.x0 + i * W.dx, TANK.z1]), k: i => W.idx(i, nz - 1) });
+    this.skirts.push({ ...mk(nx, i => [TANK.x1 - i * W.dx, TANK.z0]), k: i => W.idx(nx - 1 - i, 0) });
+    this.skirts.push({ ...mk(nz, i => [TANK.x1, TANK.z1 - i * W.dz]), k: i => W.idx(nx - 1, nz - 1 - i) });
+    this.skirts.push({ ...mk(nz, i => [TANK.x0, TANK.z0 + i * W.dz]), k: i => W.idx(0, i) });
+
+    // 前玻璃上的水线（弯月面反光），跟着水面起伏
+    {
+      const n = nx, pos = new Float32Array(n * 2 * 3), uv = new Float32Array(n * 2 * 2), idx = [];
+      for (let i = 0; i < n; i++) { const x = TANK.x0 + i * W.dx; pos.set([x, 0, TANK.z1 + 0.0006], i * 3); pos.set([x, 0, TANK.z1 + 0.0006], (n + i) * 3); uv.set([i / (n - 1), 1], i * 2); uv.set([i / (n - 1), 0], (n + i) * 2); }
+      for (let i = 0; i < n - 1; i++) idx.push(i, n + i, i + 1, i + 1, n + i, n + i + 1);
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(idx);
+      const grad = canvas2d(4, 64, (c) => { const gr = c.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(255,255,255,0.0)'); gr.addColorStop(0.18, 'rgba(255,255,255,0.95)'); gr.addColorStop(0.4, 'rgba(255,255,255,0.35)'); gr.addColorStop(0.55, 'rgba(40,90,100,0.25)'); gr.addColorStop(1, 'rgba(40,90,100,0)'); c.fillStyle = gr; c.fillRect(0, 0, 4, 64); });
+      const t = texFromCanvas(grad); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+      this.waterline = { g, n, m: new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })) };
+      scene.add(this.waterline.m);
+    }
+
+    // 光纹投影范围（按太阳方向把水槽底投到台面上）
+    causticU.uCColor.value.set(st.caustic[0]).multiplyScalar(st.caustic[1]);
+    causticU.uCRect.value.set(TANK.x0, TANK.z0, TANK.x1, TANK.z1);
+    causticU.uCShift.value.set(0, 0);
+
+    // 物体
+    this.bodies = [];
+    OBJECT_DEFS.forEach((def, i) => {
+      const mesh = def.build(def.shape, def);
+      mesh.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      const b = new Body(def, mesh, null);
+      mesh.traverse(o => { o.userData.body = b; });
+      b.goHome(); scene.add(mesh); this.bodies.push(b);
+      const el = document.createElement('div'); el.className = 'tag plain';
+      el.innerHTML = `<span class="nm">${def.name}</span><span class="st"></span>`;
+      labelsEl.appendChild(el); b.el = el; b.elState = '';
+    });
+
+    // 粒子
+    const dropM = new THREE.MeshPhysicalMaterial({ color: '#eaf8ff', roughness: 0.02, metalness: 0, envMapIntensity: 2.2, clearcoat: 1 });
+    this.drops = this.makeParticles(new THREE.SphereGeometry(1, 10, 8), dropM, 500);
+    const bubM = new THREE.MeshPhysicalMaterial({ color: '#f2fbff', roughness: 0.0, envMapIntensity: 2.6, emissive: '#1d3a48', emissiveIntensity: 0.2, clearcoat: 1 });
+    this.bubbles = this.makeParticles(new THREE.SphereGeometry(1, 10, 8), bubM, 400);
+    this.grains = this.makeParticles(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.6, emissive: '#ffffff', emissiveIntensity: 0.12 }), 500);
+
+    this.spoon = buildSpoon(); this.spoon.visible = false; scene.add(this.spoon); this.spoonAnim = null;
+    this.rhoL = RHO_WATER; this.salt = 0; this.sugar = 0;
+    this.time = 0; this.balanceShown = 0; this.scaleShown = { g: -1, name: '' };
+    this.raycaster = new THREE.Raycaster(); this.grab = null;
+  }
+  applyLowWater() { Object.assign(this.waterMat, { transmission: 0, transparent: true, opacity: 0.42, color: new THREE.Color(this.st.water.atten) }); this.waterMat.needsUpdate = true; }
+  makeParticles(geo, mat, max) {
+    const mesh = new THREE.InstancedMesh(geo, mat, max); mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.count = 0; mesh.frustumCulled = false; mesh.castShadow = false;
+    this.scene.add(mesh); return { mesh, items: [], max };
+  }
+  dispose() {
+    this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const m = o.material; if (m) (Array.isArray(m) ? m : [m]).forEach(mm => { for (const k in mm) { const v = mm[k]; if (v && v.isTexture) v.dispose(); } mm.dispose(); }); });
+    labelsEl.innerHTML = '';
+  }
+  resize(w, h) {
+    // 自动取景：水缸＋秤的所有角落，刚好塞进「顶部工具列」与「物品架」之间的空间
+    const cam = this.camera; cam.aspect = w / h; cam.clearViewOffset(); cam.updateProjectionMatrix();
+    const t = TANK.wall, pts = [];
+    for (const x of [TANK.x0 - t, TANK.x1 + t]) for (const y of [0, TANK.rim]) for (const z of [TANK.z0 - t, TANK.z1 + t]) pts.push(new THREE.Vector3(x, y, z));
+    for (const x of [BAL.x - BAL.w / 2, BAL.x + BAL.w / 2]) for (const y of [0, BAL.panTop + 0.09]) for (const z of [BAL.z - BAL.d / 2, BAL.z + BAL.d / 2]) pts.push(new THREE.Vector3(x, y, z));
+    const topPx = (w < 900 ? 150 : 86) + 10, botPx = (w < 900 ? 128 : 146) + 10;
+    const yTop = 1 - 2 * topPx / h, yBot = -1 + 2 * botPx / h, xLim = 0.95;
+    const dir = new THREE.Vector3(0, 0.42, 1).normalize();
+    const tgt = new THREE.Vector3((TANK.x0 + BAL.x + BAL.w / 2) / 2, 0.14, 0);
+    const v = new THREE.Vector3();
+    const measure = (d) => {
+      cam.position.copy(tgt).addScaledVector(dir, d); cam.lookAt(tgt); cam.updateMatrixWorld();
+      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+      for (const p of pts) { v.copy(p).project(cam); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); }
+      return { x0, x1, y0, y1 };
+    };
+    let d = 1;
+    for (let pass = 0; pass < 4; pass++) {
+      let lo = 0.3, hi = 6;
+      for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2, r = measure(m); const fits = r.x0 >= -xLim && r.x1 <= xLim && r.y1 <= yTop && r.y0 >= yBot; if (fits) hi = m; else lo = m; }
+      d = hi; const r = measure(d);
+      // 上下置中到可用空间、左右置中
+      const tanV = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+      tgt.y += (((r.y0 + r.y1) / 2) - (yTop + yBot) / 2) * d * tanV * 0.9;
+      tgt.x += ((r.x0 + r.x1) / 2) * d * tanV * cam.aspect * 0.9;
+    }
+    measure(d); cam.updateProjectionMatrix();
+  }
+
+  // ---------- 液体
+  liquidLabel() {
+    if (!this.salt && !this.sugar) return '清水';
+    if (this.salt && !this.sugar) return `盐水 · ${this.salt} 匙`;
+    if (this.sugar && !this.salt) return `糖水 · ${this.sugar} 匙`;
+    return `加了 ${this.salt} 匙盐、${this.sugar} 匙糖`;
+  }
+  startSpoon(kind) {
+    if (this.spoonAnim) return false;
+    if (kind === 'salt') this.salt++; else this.sugar++;
+    this.spoonAnim = { t: 0, kind, poured: 0 };
+    this.spoon.visible = true; this.spoon.userData.heap.visible = true; this.spoon.userData.heap.scale.set(1.15, 0.45, 0.8);
+    return true;
+  }
+  updateSpoon(dt) {
+    const a = this.spoonAnim; if (!a) return;
+    a.t += dt; const T = a.t;
+    const start = new THREE.Vector3(0.36, 0.48, 0.08), over = new THREE.Vector3(TANK.cx + 0.08, TANK.rim + 0.09, 0.02);
+    let p, tilt = 0;
+    if (T < 0.55) { const k = smooth(0, 0.55, T); p = start.clone().lerp(over, k); }
+    else if (T < 1.35) { p = over.clone(); tilt = smooth(0.55, 0.85, T) * 1.25; p.y += Math.sin(T * 30) * 0.0008 * (T > 0.85 ? 1 : 0); }
+    else { const k = smooth(1.35, 1.85, T); p = over.clone().lerp(start, k); tilt = 1.25 * (1 - k); }
+    this.spoon.position.copy(p); this.spoon.rotation.set(0, 0.25, tilt);
+    // 倒出颗粒
+    if (T > 0.7 && T < 1.35) {
+      const heap = this.spoon.userData.heap; const left = 1 - smooth(0.7, 1.3, T); heap.scale.y = 0.45 * left + 0.02;
+      const want = Math.round(GRAINS_PER_SPOON * clamp((T - 0.7) / 0.6, 0, 1));
+      const N = want - a.poured;
+      for (let i = 0; i < N; i++) {
+        if (this.grains.items.length >= this.grains.max) break;
+        const tip = new THREE.Vector3(-0.026, -0.002, 0.012).applyEuler(this.spoon.rotation).add(p);
+        const s = a.kind === 'salt' ? R(0.0011, 0.0019) : R(0.0014, 0.0024);
+        this.grains.items.push({ pos: tip.add(new THREE.Vector3(R(-0.006, 0.006), 0, R(-0.006, 0.006))), vel: new THREE.Vector3(R(-0.05, 0.05), R(-0.05, 0.02), R(-0.03, 0.06)), s, life: 1, inWater: false, kind: a.kind, rot: R(0, 6), share: GRAINS_PER_SPOON });
+        a.poured++;
+      }
+    }
+    if (T > 1.9) { this.spoon.visible = false; a.done = true; }
+    if (a.done) this.spoonAnim = null;
+  }
+  freshWater() {
+    this.salt = 0; this.sugar = 0; this.rhoL = RHO_WATER; this.grains.items.length = 0;
+    // 换水的那一下：整个水面晃一晃
+    for (let k = 0; k < this.water.v.length; k++) this.water.v[k] += Math.sin(k * 0.37) * 0.02;
+  }
+  resetObjects() { for (const b of this.bodies) b.goHome(); }
+  dropIntoTank(b) { // 点一下物品：从水缸上方轻轻掉下去
+    const x = R(TANK.x0 + 0.08, TANK.x1 - 0.08), z = TANK.cz + R(-0.04, 0.04);
+    b.placeAt(x, TANK.rim + 0.09, z); b.vel.set(0, -0.2, 0); b.w.set(R(-2, 2), R(-1, 1), R(-2, 2));
+  }
+  putOnScale(b) { // 秤一次只放一样东西：旧的回架
+    for (const o of this.bodies) if (o !== b && o.active && o.onScale) o.goHome();
+    b.placeAt(BAL.x, BAL.panTop + 0.006, BAL.z); b.onScale = true;
+  }
+  scaleScreen(w, h) { // 秤盘中心在屏幕上的位置
+    const v = new THREE.Vector3(BAL.x, BAL.panTop, BAL.z).project(this.camera);
+    const top = new THREE.Vector3(BAL.x, BAL.panTop + 0.11, BAL.z).project(this.camera);
+    return { x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, cardY: (-top.y * 0.5 + 0.5) * h };
+  }
+
+  // ---------- 输入
+  pick(ndc) {
+    this.raycaster.setFromCamera(ndc, this.camera);
+    const meshes = []; for (const b of this.bodies) if (b.active) b.mesh.traverse(o => { if (o.isMesh) meshes.push(o); });
+    for (const j of this.pickJars) j.traverse(o => { if (o.isMesh) meshes.push(o); });
+    const hit = this.raycaster.intersectObjects(meshes, false)[0];
+    if (!hit) return null;
+    return hit.object.userData.body ? { body: hit.object.userData.body } : hit.object.userData.jar ? { jar: hit.object.userData.jar } : null;
+  }
+  pointerWorld(ndc) {
+    this.raycaster.setFromCamera(ndc, this.camera);
+    const p = new THREE.Vector3();
+    if (!this.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -TANK.cz), p)) return null;
+    p.z = TANK.cz; p.x = clamp(p.x, COUNTER.x0 + 0.05, COUNTER.x1 - 0.05); p.y = clamp(p.y, 0.03, 0.6);
+    return p;
+  }
+  beginGrab(b) {
+    b.grabbed = true; b.asleep = false; b.onScale = false; b.target.copy(b.pos); b.target.y += 0.03; b.hist = [];
+  }
+  throwTap(b) {
+    // 点一下：抛进水槽里一个随机位置（平抛弧线）
+    const tgt = new THREE.Vector3(R(TANK.x0 + 0.07, TANK.x1 - 0.07), TANK.floor + BASE_DEPTH + 0.02, R(TANK.z0 + 0.06, TANK.z1 - 0.06));
+    const start = b.pos.clone(); start.y = Math.max(start.y, 0.12);
+    const T = 0.5; b.pos.copy(start);
+    b.vel.set((tgt.x - start.x) / T, (tgt.y - start.y + 0.5 * G * T * T) / T, (tgt.z - start.z) / T);
+    b.w.set(R(-6, 6), R(-4, 4), R(-6, 6)); b.asleep = false;
+  }
+
+  // ---------- 物理
+  step(h) {
+    const W = this.water, rhoL = this.rhoL;
+    let totalSub = 0;
+    for (const b of this.bodies) {
+      if (!b.active) continue;
+      if (b.asleep) { totalSub += b.sub; continue; }
+      const F = _v1.set(0, -b.m * G, 0), T = _v2.set(0, 0, 0);
+      let sub = 0;
+      const wantsWater = W.inside(b.pos.x, b.pos.z) || b.pos.y < TANK.rim + b.R;
+      for (let i = 0; i < b.buoy.length; i++) {
+        const r = b.wr[i].copy(b.buoy[i]).applyQuaternion(b.quat);
+        if (!wantsWater) continue;
+        const px = b.pos.x + r.x, py = b.pos.y + r.y, pz = b.pos.z + r.z;
+        const sy = W.sample(px, pz); if (sy === -Infinity) continue;
+        const s = clamp((sy - py) / (2 * b.rb) + 0.5, 0, 1); if (s <= 0) continue;
+        sub += b.vi * s;
+        // 该点速度 = v + ω×r
+        _v3.crossVectors(b.w, r).add(b.vel);
+        const sp = _v3.length();
+        const cq = 0.5 * rhoL * 1.0 * b.Aproj / b.buoy.length, cl = rhoL * b.vi * 4.0;
+        const f = _v3.multiplyScalar(-(cq * sp + cl) * s);
+        f.y += rhoL * G * b.vi * s;
+        F.add(f); T.add(new THREE.Vector3().crossVectors(r, f));
+      }
+      b.sub = sub; b.subFrac = sub / b.V; totalSub += sub;
+      if (b.grabbed) {
+        const d = _v3.copy(b.target).sub(b.pos);
+        const vt = d.multiplyScalar(18); if (vt.length() > 5) vt.setLength(5);
+        b.vel.lerp(vt, Math.min(1, 25 * h));
+        b.w.multiplyScalar(Math.exp(-6 * h));
+        b.w.x += b.vel.z * 10 * h; b.w.z -= b.vel.x * 10 * h;
+      } else {
+        const meff = b.m + 0.5 * rhoL * sub; // 附加质量：在水里推开水要花力气
+        b.vel.addScaledVector(F, h / meff);
+        b.applyIinv(T, _v3); b.w.addScaledVector(_v3, h);
+        b.w.multiplyScalar(Math.exp(-(0.2 + 3.5 * b.subFrac) * h));
+        b.vel.multiplyScalar(Math.exp(-0.04 * h));
+      }
+      b.pos.addScaledVector(b.vel, h);
+      const wl = b.w.length();
+      if (wl > 1e-6) { _q.setFromAxisAngle(_v3.copy(b.w).divideScalar(wl), wl * h); b.quat.premultiply(_q).normalize(); }
+      this.collide(b);
+      if (b.touchGround && !b.grabbed) { // 滚动阻力：真实物体在桌面/缸底不会一直滚
+        b.w.multiplyScalar(Math.exp(-5 * h));
+        const vy = b.vel.y; b.vel.multiplyScalar(Math.exp(-3 * h)); b.vel.y = vy;
+      }
+
+      // 水的回应：排开水 + 拖动水面
+      const dV = b.sub - b.prevSub; b.prevSub = b.sub;
+      if (W.inside(b.pos.x, b.pos.z)) {
+        W.displace(b.pos.x, b.pos.z, b.collR, dV);
+        if (b.subFrac > 0.01 && b.subFrac < 0.99) W.couple(b.pos.x, b.pos.z, b.collR, b.vel.y, Math.min(1, 9 * h));
+        // 入水瞬间：水花 + 气泡
+        const sy = W.sample(b.pos.x, b.pos.z), above = b.pos.y > sy;
+        if (b.lastAbove && !above && b.vel.y < -0.45) this.splash(b, sy);
+        b.lastAbove = above;
+      } else b.lastAbove = true;
+      // 睡眠（只在台面上静止时）
+      const still = b.vel.lengthSq() < 0.0004 && b.w.lengthSq() < 0.04 && b.touchGround && !b.grabbed && b.sub === 0;
+      b.sleep = still ? b.sleep + h : 0; if (b.sleep > 0.5) { b.asleep = true; b.vel.set(0, 0, 0); b.w.set(0, 0, 0); }
+    }
+    this.bodyPairs();
+    W.step(h);
+    this.totalSub = totalSub;
+  }
+  collide(b) {
+    b.touchFloor = false; b.touchGround = false;
+    const inside = Math.abs(b.pos.x - TANK.cx) < TANK.W / 2 && Math.abs(b.pos.z - TANK.cz) < TANK.D / 2;
+    b.inTank = inside && b.pos.y < TANK.rim + 0.02;
+    const rw = new THREE.Vector3();
+    for (const c of b.contacts) {
+      rw.copy(c.p).applyQuaternion(b.quat);
+      const p = rw.clone().add(b.pos), r = c.r;
+      if (inside) {
+        if (p.y - r < TANK.floor) { this.resolve(b, rw, new THREE.Vector3(0, 1, 0), TANK.floor - (p.y - r), 0.25, 0.5); b.touchFloor = true; b.touchGround = true; }
+        if (p.y < TANK.rim) {
+          if (p.x - r < TANK.x0) this.resolve(b, rw, new THREE.Vector3(1, 0, 0), TANK.x0 - (p.x - r), 0.3, 0.3);
+          if (p.x + r > TANK.x1) this.resolve(b, rw, new THREE.Vector3(-1, 0, 0), p.x + r - TANK.x1, 0.3, 0.3);
+          if (p.z - r < TANK.z0) this.resolve(b, rw, new THREE.Vector3(0, 0, 1), TANK.z0 - (p.z - r), 0.3, 0.3);
+          if (p.z + r > TANK.z1) this.resolve(b, rw, new THREE.Vector3(0, 0, -1), p.z + r - TANK.z1, 0.3, 0.3);
+        }
+      } else {
+        if (p.y - r < 0) { this.resolve(b, rw, new THREE.Vector3(0, 1, 0), -(p.y - r), 0.3, 0.55); b.touchGround = true; }
+        this.boxPush(b, rw, p, r, TANK.x0 - TANK.wall, TANK.x1 + TANK.wall, TANK.rim, TANK.z0 - TANK.wall, TANK.z1 + TANK.wall, false);
+        if (this.boxPush(b, rw, p, r, BAL.x - BAL.w / 2, BAL.x + BAL.w / 2, BAL.panTop, BAL.z - BAL.d / 2, BAL.z + BAL.d / 2, true)) { b.onPan = 0.15; b.touchGround = true; }
+        if (p.x < COUNTER.x0) this.resolve(b, rw, new THREE.Vector3(1, 0, 0), COUNTER.x0 - p.x, 0.2, 0.3);
+        if (p.x > COUNTER.x1) this.resolve(b, rw, new THREE.Vector3(-1, 0, 0), p.x - COUNTER.x1, 0.2, 0.3);
+        if (p.z < COUNTER.z0 + 0.02) this.resolve(b, rw, new THREE.Vector3(0, 0, 1), COUNTER.z0 + 0.02 - p.z, 0.2, 0.3);
+        if (p.z > COUNTER.z1 - 0.02) this.resolve(b, rw, new THREE.Vector3(0, 0, -1), p.z - COUNTER.z1 + 0.02, 0.2, 0.3);
+      }
+    }
+  }
+  boxPush(b, rw, p, r, x0, x1, top, z0, z1, isPan) {
+    if (p.x < x0 - r || p.x > x1 + r || p.z < z0 - r || p.z > z1 + r || p.y - r > top) return false;
+    const pen = [[p.x + r - x0, -1, 0, 0], [x1 - (p.x - r), 1, 0, 0], [top - (p.y - r), 0, 1, 0], [p.z + r - z0, 0, 0, -1], [z1 - (p.z - r), 0, 0, 1]];
+    pen.sort((a, b2) => a[0] - b2[0]); const m = pen[0];
+    this.resolve(b, rw, new THREE.Vector3(m[1], m[2], m[3]), m[0], 0.25, 0.5);
+    return isPan && m[2] === 1;
+  }
+  resolve(b, rw, n, depth, e, mu) {
+    b.pos.addScaledVector(n, depth * 0.85);
+    const vp = new THREE.Vector3().crossVectors(b.w, rw).add(b.vel);
+    const vn = vp.dot(n); if (vn >= 0) return;
+    if (vn > -0.25) e = 0;
+    const rn = new THREE.Vector3().crossVectors(rw, n), tmp = new THREE.Vector3();
+    b.applyIinv(rn, tmp); const k = 1 / b.m + n.dot(tmp.cross(rw));
+    const j = -(1 + e) * vn / k;
+    const J = n.clone().multiplyScalar(j);
+    b.vel.addScaledVector(J, 1 / b.m); b.applyIinv(new THREE.Vector3().crossVectors(rw, J), tmp); b.w.add(tmp);
+    // 摩擦
+    vp.crossVectors(b.w, rw).add(b.vel);
+    const vt = vp.sub(n.clone().multiplyScalar(vp.dot(n))); const vtl = vt.length();
+    if (vtl > 1e-6) {
+      const t = vt.divideScalar(vtl), rt = new THREE.Vector3().crossVectors(rw, t);
+      b.applyIinv(rt, tmp); const kt = 1 / b.m + t.dot(tmp.cross(rw));
+      const jt = clamp(-vtl / kt, -mu * j, mu * j);
+      const Jt = t.multiplyScalar(jt);
+      b.vel.addScaledVector(Jt, 1 / b.m); b.applyIinv(new THREE.Vector3().crossVectors(rw, Jt), tmp); b.w.add(tmp);
+    }
+  }
+  bodyPairs() {
+    const bs = this.bodies;
+    for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++) {
+      const a = bs[i], b = bs[j];
+      if (!a.active || !b.active) continue;
+      const d = _v3.copy(b.pos).sub(a.pos), dist = d.length(), rr = a.collR + b.collR;
+      if (dist >= rr || dist < 1e-6) continue;
+      const n = d.divideScalar(dist), depth = rr - dist;
+      const ia = a.grabbed ? 0 : 1 / a.m, ib = b.grabbed ? 0 : 1 / b.m, s = ia + ib; if (!s) continue;
+      a.pos.addScaledVector(n, -depth * ia / s); b.pos.addScaledVector(n, depth * ib / s);
+      const rv = new THREE.Vector3().copy(b.vel).sub(a.vel).dot(n);
+      if (rv < 0) { const jj = -(1.15) * rv / s; a.vel.addScaledVector(n, -jj * ia); b.vel.addScaledVector(n, jj * ib); }
+      if (a.asleep || b.asleep) { a.asleep = b.asleep = false; a.sleep = b.sleep = 0; }
+    }
+  }
+  splash(b, sy) {
+    const sp = -b.vel.y, Rr = b.collR;
+    const count = Math.round(clamp(sp * Rr * 700, 8, REDUCED ? 25 : 70));
+    for (let i = 0; i < count && this.drops.items.length < this.drops.max; i++) {
+      const a = R(0, Math.PI * 2), out = R(0.25, 0.75) * Math.pow(sp, 0.7), up = R(0.5, 1.3) * Math.pow(sp, 0.85) * (0.6 + Rr * 10);
+      this.drops.items.push({ pos: new THREE.Vector3(b.pos.x + Math.cos(a) * Rr * 0.95, sy + 0.002, b.pos.z + Math.sin(a) * Rr * 0.95), vel: new THREE.Vector3(Math.cos(a) * out, Math.min(up, 2.2), Math.sin(a) * out), r: R(0.0012, 0.0034) });
+    }
+    // 带下去的气泡：越密、越快的物体带得越多
+    const nb = Math.round(clamp(sp * 14 + (b.rho > 1500 ? 10 : 4), 6, 34));
+    for (let i = 0; i < nb && this.bubbles.items.length < this.bubbles.max; i++) {
+      this.bubbles.items.push({ pos: new THREE.Vector3(b.pos.x + R(-Rr, Rr) * 0.7, sy - R(0.005, 0.03), b.pos.z + R(-Rr, Rr) * 0.7), r: R(0.0012, 0.0042), delay: R(0, 0.35), follow: b, age: 0, ph: R(0, 6) });
+    }
+    this.water.couple(b.pos.x, b.pos.z, Rr * 1.1, -sp * 0.9, 1);
+  }
+  updateParticles(dt) {
+    const W = this.water, dummy = new THREE.Object3D();
+    // 水滴
+    const D = this.drops; let n = 0;
+    D.items = D.items.filter(p => {
+      p.vel.y -= G * dt; p.pos.addScaledVector(p.vel, dt);
+      const sy = W.sample(p.pos.x, p.pos.z);
+      if (sy !== -Infinity && p.pos.y < sy && p.vel.y < 0) { W.poke(p.pos.x, p.pos.z, -0.06 * p.r * 300); return false; }
+      if (p.pos.y < 0) return false;
+      return true;
+    });
+    for (const p of D.items) { dummy.position.copy(p.pos); const s = p.r; const st = clamp(p.vel.length() * 0.4, 1, 2.2); dummy.scale.set(s, s * st, s); dummy.lookAt(p.pos.clone().add(p.vel)); dummy.rotateX(Math.PI / 2); dummy.updateMatrix(); D.mesh.setMatrixAt(n++, dummy.matrix); }
+    D.mesh.count = n; D.mesh.instanceMatrix.needsUpdate = true;
+    // 气泡
+    const B = this.bubbles; n = 0;
+    B.items = B.items.filter(p => {
+      p.age += dt; if (p.age < p.delay) { if (p.follow) { p.pos.x += (p.follow.pos.x - p.pos.x) * 0.2; p.pos.y = Math.min(p.pos.y, p.follow.pos.y + R(-0.01, 0.01)); p.pos.z += (p.follow.pos.z - p.pos.z) * 0.2; } return true; }
+      const rise = 0.12 + p.r * 45;
+      p.pos.y += rise * dt; p.pos.x += Math.sin(p.age * 14 + p.ph) * 0.03 * dt; p.pos.z += Math.cos(p.age * 11 + p.ph) * 0.02 * dt;
+      const sy = W.sample(p.pos.x, p.pos.z);
+      if (sy === -Infinity || p.pos.y > sy - p.r) { W.poke(p.pos.x, p.pos.z, 0.012); return false; }
+      return true;
+    });
+    for (const p of B.items) { dummy.position.copy(p.pos); dummy.rotation.set(0, 0, 0); const wob = 1 + Math.sin(p.age * 20 + p.ph) * 0.12; dummy.scale.set(p.r * wob, p.r / wob, p.r * wob); dummy.updateMatrix(); B.mesh.setMatrixAt(n++, dummy.matrix); }
+    B.mesh.count = n; B.mesh.instanceMatrix.needsUpdate = true;
+    // 盐/糖颗粒：落水 → 慢慢沉 → 溶解（溶解时液体密度才真正变大）
+    const Gr = this.grains; n = 0;
+    Gr.items = Gr.items.filter(p => {
+      const sy = W.sample(p.pos.x, p.pos.z);
+      if (!p.inWater) {
+        p.vel.y -= G * dt; p.pos.addScaledVector(p.vel, dt);
+        if (sy !== -Infinity && p.pos.y < sy) { p.inWater = true; p.vel.set(p.vel.x * 0.1, -R(0.03, 0.08), p.vel.z * 0.1); W.poke(p.pos.x, p.pos.z, -0.01); }
+        if (p.pos.y < 0) return false;
+      } else {
+        p.pos.addScaledVector(p.vel, dt); p.pos.y = Math.max(p.pos.y, TANK.floor + 0.001);
+        p.life -= dt * (p.kind === 'salt' ? 0.75 : 0.55);
+        if (p.life <= 0) { this.rhoL += (p.kind === 'salt' ? SALT_STEP : SUGAR_STEP) / p.share; return false; }
+      }
+      return true;
+    });
+    for (const p of Gr.items) { dummy.position.copy(p.pos); dummy.rotation.set(p.rot, p.rot * 1.3, 0); const s = p.s * Math.max(0.05, p.life); dummy.scale.set(s, s, s); dummy.updateMatrix(); Gr.mesh.setMatrixAt(n++, dummy.matrix); }
+    Gr.mesh.count = n; Gr.mesh.instanceMatrix.needsUpdate = true;
+  }
+  updateWaterMesh() {
+    const W = this.water, pos = this.surf.geometry.attributes.position;
+    for (let k = 0; k < W.h.length; k++) pos.setY(k, W.h[k]);
+    pos.needsUpdate = true; this.surf.geometry.computeVertexNormals();
+    { const p = this.waterline.g.attributes.position, n = this.waterline.n; for (let i = 0; i < n; i++) { const y = W.h[W.idx(i, W.nz - 1)]; p.setY(i, y + 0.0015); p.setY(n + i, y - 0.006); } p.needsUpdate = true; }
+    for (const s of this.skirts) { const p = s.g.attributes.position; for (let i = 0; i < s.n; i++) p.setY(i, W.h[s.k(i)]); p.needsUpdate = true; s.g.computeVertexNormals(); }
+  }
+  update(dt) {
+    this.time += dt;
+    this.updateSpoon(dt);
+    const sub = 6, h = dt / sub;
+    for (let i = 0; i < sub; i++) this.step(h);
+    const target = TANK.floor + BASE_DEPTH + (this.totalSub || 0) / (TANK.W * TANK.D);
+    this.water.relax(target, dt);
+    this.updateParticles(dt);
+    this.updateWaterMesh();
+    for (const b of this.bodies) { b.mesh.position.copy(b.pos); b.mesh.quaternion.copy(b.quat); if (!b.asleep) b.onPan = Math.max(0, b.onPan - dt); }
+    // 天平读数（真实电子秤会稍微跳一下才稳定）
+    let g = 0; this.scaleBody = null; for (const b of this.bodies) if (b.active && b.onPan > 0 && !b.grabbed) { g += b.m * 1000; this.scaleBody = b; }
+    this.scaleGrams = g;
+    this.balanceShown += (g - this.balanceShown) * Math.min(1, dt * 7);
+    this.balance.draw(Math.abs(g - this.balanceShown) < 0.5 ? Math.round(g) : Math.round(this.balanceShown));
+    // 光纹投影：水槽底按太阳方向投到台面
+    causticU.uTime.value = this.time;
+  }
+  updateLabels(w, h, dt) {
+    const v = new THREE.Vector3();
+    for (const b of this.bodies) {
+      if (!b.active || b.onScale) { b.el.classList.add('hide'); continue; }
+      v.copy(b.pos); v.y += b.R + 0.012; v.project(this.camera);
+      const x = (v.x * 0.5 + 0.5) * w, y = (-v.y * 0.5 + 0.5) * h;
+      // 状态判定：在水槽里而且稳定下来才贴「浮/沉」
+      const moved = b.lastP ? b.lastP.distanceTo(b.pos) / Math.max(dt, 1e-4) : 0; b.lastP = (b.lastP || new THREE.Vector3()).copy(b.pos);
+      b.spd = (b.spd ?? 0) + (moved - (b.spd ?? 0)) * Math.min(1, dt * 3);
+      b.steady = (b.inTank && !b.grabbed && b.spd < 0.06) ? b.steady + dt : 0;
+      let state = '';
+      if (b.inTank && b.steady > 0.6) {
+        if (b.touchFloor && b.subFrac > 0.97) state = 'sink';
+        else if (b.subFrac < 0.995) state = 'float';
+      }
+      if (state !== b.elState) {
+        b.elState = state;
+        b.el.className = 'tag ' + (state || 'plain');
+        b.el.querySelector('.st').innerHTML = state === 'float' ? `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3M4 7l4-4 4 4"/></svg>浮` : state === 'sink' ? `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v10M4 9l4 4 4-4"/></svg>沉` : '';
+      }
+      const hide = v.z > 1;
+      b.el.classList.toggle('hide', hide);
+      b.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+    }
+  }
+}
+
+// ===================================================================
+// 9. 介面与主回圈
+// ===================================================================
+const app = document.getElementById('app');
+const labelsEl = document.getElementById('labels');
+const hint = document.getElementById('hint');
+const liquidV = document.getElementById('liquidV');
+let world = null, lowQuality = false, slow = false;
+
+function setStyle(s) {
+  if (world) world.dispose();
+  app.dataset.style = s;
+  world = new World(s);
+  world.resize(innerWidth, innerHeight);
+  liquidV.textContent = world.liquidLabel();
+}
+function onResize() { renderer.setSize(innerWidth, innerHeight, false); world && world.resize(innerWidth, innerHeight); }
+addEventListener('resize', onResize);
+
+const slowBtn = document.getElementById('slowBtn');
+slowBtn.addEventListener('click', () => { slow = !slow; slowBtn.setAttribute('aria-pressed', String(slow)); });
+const addSpoon = (kind) => { if (world.startSpoon(kind)) { liquidV.textContent = world.liquidLabel(); spoonButtons(true); setTimeout(() => spoonButtons(false), 1950); } };
+const spoonButtons = (dis) => { document.getElementById('saltBtn').disabled = dis; document.getElementById('sugarBtn').disabled = dis; };
+document.getElementById('saltBtn').addEventListener('click', () => addSpoon('salt'));
+document.getElementById('sugarBtn').addEventListener('click', () => addSpoon('sugar'));
+document.getElementById('freshBtn').addEventListener('click', () => { world.freshWater(); liquidV.textContent = world.liquidLabel(); });
+document.getElementById('resetBtn').addEventListener('click', () => world.resetObjects());
+
+// 物品架
+const shelfEl = document.getElementById('shelf');
+const scaleCard = document.getElementById('scaleCard'), scName = document.getElementById('scName'), scNum = document.getElementById('scNum');
+const tiles = OBJECT_DEFS.map((def, i) => {
+  const btn = document.createElement('button'); btn.className = 'item'; btn.setAttribute('role', 'listitem'); btn.dataset.i = i;
+  btn.innerHTML = `<span class="where"></span><img alt=""><span>${def.name}</span>`;
+  btn.setAttribute('aria-label', `${def.name}：点一下放进水里`);
+  shelfEl.appendChild(btn); return btn;
+});
+function updateShelf() {
+  world.bodies.forEach((b, i) => {
+    const t = tiles[i], inWater = b.active && !b.onScale && !(b.onPan > 0), onScale = b.active && (b.onScale || b.onPan > 0);
+    t.classList.toggle('in-water', inWater && !onScale); t.classList.toggle('on-scale', onScale);
+    t.querySelector('.where').textContent = onScale ? '在秤上' : inWater ? '在水里' : '';
+  });
+}
+
+// 指针：从物品架拖出来、拖水里的东西、点一下
+const ndc = new THREE.Vector2();
+let drag = null;
+function toNdc(x, y) { ndc.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1); return ndc; }
+const shelfTop = () => shelfEl.getBoundingClientRect().top;
+function startDrag(b, e, fromShelf) {
+  drag = { b, x: e.clientX, y: e.clientY, t: performance.now(), moved: false, fromShelf, live: !fromShelf, id: e.pointerId };
+  if (!fromShelf) { world.beginGrab(b); const p = world.pointerWorld(toNdc(e.clientX, e.clientY)); if (p) b.target.copy(p); }
+  canvas.classList.add('grabbing');
+}
+tiles.forEach((t, i) => t.addEventListener('pointerdown', (e) => {
+  e.preventDefault(); const b = world.bodies[i];
+  if (b.active) { b.goHome(); t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 500); return; } // 再点一次：拿回架上
+  startDrag(b, e, true); try { t.setPointerCapture(e.pointerId); } catch (_) {}
+}));
+canvas.addEventListener('pointerdown', (e) => {
+  const hit = world.pick(toNdc(e.clientX, e.clientY)); if (!hit) return;
+  if (hit.jar) { addSpoon(hit.jar); return; }
+  startDrag(hit.body, e, false); try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+});
+addEventListener('pointermove', (e) => {
+  if (!drag || e.pointerId !== drag.id) return;
+  if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 8) drag.moved = true;
+  const b = drag.b, p = world.pointerWorld(toNdc(e.clientX, e.clientY)); if (!p) return;
+  if (!drag.live) { // 离开物品架才把东西「拿」进场景
+    if (e.clientY > shelfTop() - 10) return;
+    b.placeAt(p.x, Math.max(0.03, p.y - b.R), p.z); world.beginGrab(b); drag.live = true;
+  }
+  b.target.copy(p);
+  b.hist.push({ t: performance.now(), p: p.clone() }); if (b.hist.length > 8) b.hist.shift();
+});
+function nearScale(x, y) {
+  const s = world.scaleScreen(innerWidth, innerHeight);
+  const r = Math.max(110, Math.min(innerWidth, innerHeight) * 0.16);
+  return Math.hypot(x - s.x, y - s.y) < r;
+}
+function endDrag(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const d = drag, b = d.b; drag = null; canvas.classList.remove('grabbing');
+  hint.classList.add('gone');
+  if (d.fromShelf && !d.moved) { world.dropIntoTank(b); return; } // 点一下：放进水里
+  if (!d.live) return;
+  b.grabbed = false;
+  if (!d.moved) return; // 场景里点一下：不动它
+  if (nearScale(e.clientX, e.clientY)) { world.putOnScale(b); return; }
+  const p = world.pointerWorld(toNdc(e.clientX, e.clientY));
+  const overTank = p && p.x > TANK.x0 - 0.02 && p.x < TANK.x1 + 0.02 && e.clientY < shelfTop() - 10;
+  if (!overTank) { b.goHome(); const t = tiles[world.bodies.indexOf(b)]; t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 500); return; }
+  if (p.x < TANK.x0 + 0.03 || p.x > TANK.x1 - 0.03) b.pos.x = clamp(b.pos.x, TANK.x0 + b.R, TANK.x1 - b.R); // 放在缸边也算放进去
+  b.pos.z = clamp(b.pos.z, TANK.z0 + b.R, TANK.z1 - b.R);
+  const hst = b.hist.filter(q => performance.now() - q.t < 110);
+  if (hst.length >= 2) { const a = hst[0], z = hst[hst.length - 1]; const dt = Math.max(0.016, (z.t - a.t) / 1000); const v = z.p.clone().sub(a.p).divideScalar(dt); v.z = 0; if (v.length() > 3) v.setLength(3); b.vel.copy(v); }
+}
+addEventListener('pointerup', endDrag);
+addEventListener('pointercancel', endDrag);
+
+// 画质自动调整：学校一体机跑不动时降一级，再不行就把水换成不折射的版本
+let frames = 0, acc = 0, degradeStep = 0;
+function watchPerf(dt) {
+  frames++; acc += dt;
+  if (acc > 3) {
+    const fps = frames / acc; frames = 0; acc = 0;
+    if (fps < 32 && degradeStep === 0) { degradeStep = 1; pixelRatio = 1; renderer.setPixelRatio(1); onResize(); }
+    else if (fps < 26 && degradeStep === 1) { degradeStep = 2; lowQuality = true; world.applyLowWater(); renderer.shadowMap.type = THREE.PCFShadowMap; }
+  }
+}
+
+let last = performance.now(), firstFrame = true;
+function loop(now) {
+  requestAnimationFrame(loop);
+  let dt = Math.min(0.033, (now - last) / 1000); last = now;
+  if (document.hidden) return;
+  watchPerf(dt);
+  if (slow) dt *= 0.25;
+  world.update(dt);
+  renderer.render(world.scene, world.camera);
+  world.updateLabels(innerWidth, innerHeight, dt);
+  liquidV.textContent = world.liquidLabel();
+  const sc = world.scaleScreen(innerWidth, innerHeight);
+  scaleCard.style.transform = `translate(${sc.x}px, ${sc.cardY}px) translate(-50%, -100%)`;
+  const g = Math.round(world.balanceShown), nm = world.scaleBody ? world.scaleBody.name : '把东西拖到秤上';
+  if (g !== world.scaleShown.g || nm !== world.scaleShown.name) { world.scaleShown = { g, name: nm }; scNum.textContent = Math.max(0, g); scName.textContent = nm; scaleCard.classList.toggle('empty', !world.scaleBody); }
+  updateShelf();
+  if (firstFrame) { firstFrame = false; document.getElementById('loading').classList.add('done'); }
+}
+
+// 物品缩图：用同一套 3D 模型拍一张「产品照」
+function renderThumbs() {
+  const size = 192, r2 = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  r2.setSize(size, size, false); r2.setPixelRatio(1); r2.toneMapping = THREE.ACESFilmicToneMapping; r2.outputColorSpace = THREE.SRGBColorSpace;
+  const pm = new THREE.PMREMGenerator(r2), env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+  OBJECT_DEFS.forEach((def, i) => {
+    const sc = new THREE.Scene(); sc.environment = env; sc.environmentIntensity = 0.7;
+    sc.add(new THREE.HemisphereLight('#fff4e0', '#8a6a4a', 0.8));
+    const dl = new THREE.DirectionalLight('#ffe6c4', 2.6); dl.position.set(-1, 2, 1.5); sc.add(dl);
+    const m = def.build(def.shape, def); const r = def.restRot || [0, 0, 0]; m.rotation.set(r[0], r[1] + 0.5, r[2]); sc.add(m);
+    const box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3()), rad = box.getSize(new THREE.Vector3()).length() / 2;
+    const cam = new THREE.PerspectiveCamera(28, 1, 0.001, 10);
+    cam.position.copy(c).add(new THREE.Vector3(0, 0.55, 1).normalize().multiplyScalar(rad / Math.tan(THREE.MathUtils.degToRad(14)) * 0.78)); cam.lookAt(c);
+    r2.render(sc, cam);
+    tiles[i].querySelector('img').src = r2.domElement.toDataURL('image/png');
+    sc.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  });
+  pm.dispose(); r2.dispose(); try { r2.forceContextLoss(); } catch (_) {}
+}
+
+// 测试钩子（验收用）
+window.__fc = { get world() { return world; }, setStyle, addSpoon, tiles, step: (sec) => { for (let t = 0; t < sec; t += 1 / 60) world.update(1 / 60); } };
+
+(async function boot() {
+  try { await Promise.race([Promise.all(['40px "ZCOOL KuaiLe"', '40px "ZCOOL QingKe HuangYou"', '40px "IBM Plex Mono"', '600 40px "IBM Plex Mono"', '40px "Noto Sans SC"'].map(f => document.fonts.load(f, '盐糖0123456789g'))), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
+  renderer.setSize(innerWidth, innerHeight, false);
+  setStyle('kitchen');
+  renderThumbs();
+  requestAnimationFrame(loop);
+})();
+</script>
